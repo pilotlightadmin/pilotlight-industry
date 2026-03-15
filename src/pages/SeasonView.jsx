@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import StarIcon from '../components/Icons';
+import { StarIcon } from '../components/Icons';
 import StorageManager from '../services/StorageManager';
 
 const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }) => {
@@ -11,12 +11,11 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
     const loadPilots = async () => {
       try {
         const allPilots = await StorageManager.getPilotsForVoting();
-        // Sort by avgOverall descending and take top 10
         const topPilots = allPilots
-          .filter(p => p.avgOverall !== undefined && p.avgOverall !== null)
+          .filter(p => p.avgOverall !== undefined && p.avgOverall !== null && p.avgOverall > 0)
           .sort((a, b) => (b.avgOverall || 0) - (a.avgOverall || 0))
           .slice(0, 10);
-        setPilots(topPilots);
+        setPilots(topPilots.length > 0 ? topPilots : allPilots.slice(0, 10));
       } catch (error) {
         console.error('Failed to load pilots:', error);
         setPilots([]);
@@ -24,7 +23,6 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
         setLoading(false);
       }
     };
-
     loadPilots();
   }, []);
 
@@ -33,7 +31,7 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
     return `https://image.mux.com/${playbackId}/thumbnail.png`;
   };
 
-  const truncateLogline = (text, maxLength = 100) => {
+  const truncateLogline = (text, maxLength = 120) => {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
@@ -42,15 +40,11 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
     if (!rating) return null;
     const stars = Math.round(rating);
     return (
-      <div className="flex items-center gap-1">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
         {[...Array(5)].map((_, i) => (
-          <StarIcon
-            key={i}
-            filled={i < stars}
-            className="w-3.5 h-3.5"
-          />
+          <StarIcon key={i} size={14} filled={i < stars} color="#d4a574" emptyColor="rgba(212,165,116,0.2)" />
         ))}
-        <span className="text-xs ml-1" style={{ color: '#d4a574' }}>
+        <span style={{ fontSize: '0.75rem', marginLeft: '0.4rem', color: '#d4a574', fontFamily: '"DM Sans", sans-serif' }}>
           {rating.toFixed(1)}
         </span>
       </div>
@@ -58,134 +52,101 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
   };
 
   return (
-    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh' }} className="p-8">
+    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', padding: '2rem 3rem', fontFamily: '"DM Sans", sans-serif', color: '#f5f0eb' }}>
       {/* Header */}
-      <div className="mb-12">
+      <div style={{ marginBottom: '3rem' }}>
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 mb-6 transition-opacity hover:opacity-70"
-          style={{ color: '#d4a574' }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            marginBottom: '1.5rem', background: 'none', border: 'none',
+            color: '#d4a574', cursor: 'pointer', fontSize: '0.85rem',
+            fontFamily: '"DM Sans", sans-serif', padding: 0
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">Back to Viewing Room</span>
+          <ArrowLeft size={18} />
+          <span>Back to Viewing Room</span>
         </button>
 
-        <h1
-          className="text-5xl font-light mb-3"
-          style={{
-            fontFamily: 'Cormorant Garamond',
-            letterSpacing: '0.15em',
-            color: '#f5f0eb'
-          }}
-        >
-          The Season
-        </h1>
-        <p
-          className="text-base font-light"
-          style={{
-            fontFamily: 'DM Sans',
-            color: 'rgba(245,240,235,0.5)'
-          }}
-        >
-          The highest-rated pilots this season
-        </p>
+        <h1 style={{
+          fontFamily: '"Cormorant Garamond", Georgia, serif',
+          fontSize: '2.8rem', fontWeight: 300, letterSpacing: '0.15em',
+          color: '#f5f0eb', margin: '0 0 0.75rem 0'
+        }}>The Season</h1>
+        <p style={{
+          fontSize: '0.95rem', fontWeight: 300,
+          color: 'rgba(245,240,235,0.5)', margin: 0
+        }}>The highest-rated pilots this season</p>
       </div>
 
-      {/* Loading State */}
+      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#d4a574' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 0' }}>
+          <Loader2 size={32} style={{ color: '#d4a574', animation: 'spin 1s linear infinite' }} />
         </div>
       )}
 
       {/* Pilots List */}
       {!loading && pilots.length > 0 && (
-        <div className="space-y-4 max-w-4xl">
+        <div style={{ maxWidth: '800px' }}>
           {pilots.map((pilot) => {
             const thumbnailUrl = getThumbnailUrl(pilot.playbackId);
-
             return (
               <div
                 key={pilot.id}
                 onClick={() => onSelectPilot(pilot)}
-                className="cursor-pointer transition-all duration-300 p-4 rounded-lg flex gap-6"
                 style={{
+                  display: 'flex', gap: '1.5rem', padding: '1.25rem',
                   backgroundColor: 'rgba(15, 15, 15, 0.8)',
                   border: '1px solid rgba(212, 165, 116, 0.15)',
-                  borderColor: 'rgba(212, 165, 116, 0.15)'
+                  marginBottom: '1rem', cursor: 'pointer',
+                  transition: 'all 0.3s ease', borderRadius: '4px'
                 }}
-                onMouseEnter={(e) => {
+                onMouseEnter={e => {
                   e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.4)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                 }}
-                onMouseLeave={(e) => {
+                onMouseLeave={e => {
                   e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.15)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                {/* Thumbnail */}
                 {thumbnailUrl && (
-                  <div className="flex-shrink-0">
+                  <div style={{ flexShrink: 0 }}>
                     <img
                       src={thumbnailUrl}
                       alt={pilot.pilotTitle}
-                      className="w-40 h-24 object-cover rounded-md"
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="96"%3E%3Crect fill="%23222" width="160" height="96"/%3E%3C/svg%3E';
-                      }}
+                      style={{ width: '160px', height: '96px', objectFit: 'cover', borderRadius: '4px' }}
+                      onError={e => { e.target.style.display = 'none'; }}
                     />
                   </div>
                 )}
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <h3
-                    className="text-lg font-light mb-2 truncate"
-                    style={{
-                      fontFamily: 'Cormorant Garamond',
-                      color: '#f5f0eb'
-                    }}
-                  >
-                    {pilot.pilotTitle}
-                  </h3>
-
-                  <p
-                    className="text-sm mb-3 line-clamp-2"
-                    style={{
-                      fontFamily: 'DM Sans',
-                      color: 'rgba(245,240,235,0.6)'
-                    }}
-                  >
-                    {truncateLogline(pilot.logline)}
-                  </p>
-
-                  <div className="flex items-center gap-4 flex-wrap">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h3 style={{
+                    fontFamily: '"Cormorant Garamond", Georgia, serif',
+                    fontSize: '1.25rem', fontWeight: 300, color: '#f5f0eb',
+                    margin: '0 0 0.5rem 0', letterSpacing: '0.05em'
+                  }}>{pilot.pilotTitle}</h3>
+                  <p style={{
+                    fontSize: '0.85rem', color: 'rgba(245,240,235,0.5)',
+                    margin: '0 0 0.75rem 0', lineHeight: 1.5
+                  }}>{truncateLogline(pilot.logline)}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     {pilot.genre && (
-                      <span
-                        className="text-xs px-2.5 py-1 rounded"
-                        style={{
-                          backgroundColor: 'rgba(212, 165, 116, 0.1)',
-                          color: '#d4a574',
-                          fontFamily: 'DM Sans'
-                        }}
-                      >
-                        {pilot.genre}
-                      </span>
+                      <span style={{
+                        fontSize: '0.7rem', padding: '0.25rem 0.6rem',
+                        backgroundColor: 'rgba(212, 165, 116, 0.1)',
+                        color: '#d4a574', borderRadius: '2px'
+                      }}>{pilot.genre}</span>
                     )}
-
                     {pilot.creatorName && (
-                      <span
-                        className="text-xs"
-                        style={{
-                          color: 'rgba(245,240,235,0.5)',
-                          fontFamily: 'DM Sans'
-                        }}
-                      >
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(245,240,235,0.4)' }}>
                         by {pilot.creatorName}
                       </span>
                     )}
-
-                    {pilot.avgOverall && renderStars(pilot.avgOverall)}
+                    {pilot.avgOverall > 0 && renderStars(pilot.avgOverall)}
                   </div>
                 </div>
               </div>
@@ -196,14 +157,8 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
 
       {/* Empty State */}
       {!loading && pilots.length === 0 && (
-        <div className="py-16 text-center">
-          <p
-            className="text-base font-light"
-            style={{
-              fontFamily: 'DM Sans',
-              color: 'rgba(245,240,235,0.4)'
-            }}
-          >
+        <div style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.95rem', fontWeight: 300, color: 'rgba(245,240,235,0.4)' }}>
             No pilots available yet
           </p>
         </div>

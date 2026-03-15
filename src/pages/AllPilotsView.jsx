@@ -18,7 +18,6 @@ const AllPilotsView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogou
         setLoading(false);
       }
     };
-
     loadPilots();
   }, []);
 
@@ -28,124 +27,98 @@ const AllPilotsView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogou
   };
 
   return (
-    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh' }} className="p-8">
+    <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', padding: '2rem 3rem', fontFamily: '"DM Sans", sans-serif', color: '#f5f0eb' }}>
       {/* Header */}
-      <div className="mb-12">
+      <div style={{ marginBottom: '3rem' }}>
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 mb-6 transition-opacity hover:opacity-70"
-          style={{ color: '#d4a574' }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            marginBottom: '1.5rem', background: 'none', border: 'none',
+            color: '#d4a574', cursor: 'pointer', fontSize: '0.85rem',
+            fontFamily: '"DM Sans", sans-serif', padding: 0
+          }}
+          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">Back to Viewing Room</span>
+          <ArrowLeft size={18} />
+          <span>Back to Viewing Room</span>
         </button>
 
-        <h1
-          className="text-5xl font-light mb-3"
-          style={{
-            fontFamily: 'Cormorant Garamond',
-            letterSpacing: '0.15em',
-            color: '#f5f0eb'
-          }}
-        >
-          All Pilots
-        </h1>
-        <p
-          className="text-base font-light"
-          style={{
-            fontFamily: 'DM Sans',
-            color: 'rgba(245,240,235,0.5)'
-          }}
-        >
-          The complete collection
-        </p>
+        <h1 style={{
+          fontFamily: '"Cormorant Garamond", Georgia, serif',
+          fontSize: '2.8rem', fontWeight: 300, letterSpacing: '0.15em',
+          color: '#f5f0eb', margin: '0 0 0.75rem 0'
+        }}>All Pilots</h1>
+        <p style={{
+          fontSize: '0.95rem', fontWeight: 300,
+          color: 'rgba(245,240,235,0.5)', margin: 0
+        }}>The complete collection</p>
       </div>
 
-      {/* Loading State */}
+      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#d4a574' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem 0' }}>
+          <Loader2 size={32} style={{ color: '#d4a574', animation: 'spin 1s linear infinite' }} />
         </div>
       )}
 
       {/* Pilots Grid */}
       {!loading && pilots.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '1.5rem',
+          maxWidth: '1200px'
+        }}>
           {pilots.map((pilot) => {
             const thumbnailUrl = getThumbnailUrl(pilot.playbackId);
-
             return (
               <div
                 key={pilot.id}
                 onClick={() => onSelectPilot(pilot)}
-                className="cursor-pointer transition-all duration-300 overflow-hidden rounded-lg"
                 style={{
                   backgroundColor: 'rgba(15, 15, 15, 0.8)',
                   border: '1px solid rgba(212, 165, 116, 0.15)',
-                  borderTopLeftRadius: '0.5rem',
-                  borderTopRightRadius: '0.5rem'
+                  cursor: 'pointer', transition: 'all 0.3s ease',
+                  overflow: 'hidden', borderRadius: '4px'
                 }}
-                onMouseEnter={(e) => {
+                onMouseEnter={e => {
                   e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.4)';
                   e.currentTarget.style.transform = 'translateY(-4px)';
                 }}
-                onMouseLeave={(e) => {
+                onMouseLeave={e => {
                   e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.15)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                {/* Thumbnail */}
                 {thumbnailUrl && (
-                  <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9' }}>
                     <img
                       src={thumbnailUrl}
                       alt={pilot.pilotTitle}
-                      className="w-full h-full object-cover"
-                      style={{
-                        borderTopLeftRadius: '0.5rem',
-                        borderTopRightRadius: '0.5rem'
-                      }}
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="225"%3E%3Crect fill="%23222" width="400" height="225"/%3E%3C/svg%3E';
-                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      onError={e => { e.target.style.display = 'none'; }}
                     />
                   </div>
                 )}
-
-                {/* Content */}
-                <div className="p-4">
-                  <h3
-                    className="text-lg font-light mb-2 truncate"
-                    style={{
-                      fontFamily: 'Cormorant Garamond',
-                      color: '#f5f0eb'
-                    }}
-                  >
-                    {pilot.pilotTitle}
-                  </h3>
-
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div style={{ padding: '1rem' }}>
+                  <h3 style={{
+                    fontFamily: '"Cormorant Garamond", Georgia, serif',
+                    fontSize: '1.15rem', fontWeight: 300, color: '#f5f0eb',
+                    margin: '0 0 0.5rem 0', letterSpacing: '0.05em',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                  }}>{pilot.pilotTitle}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     {pilot.genre && (
-                      <span
-                        className="text-xs px-2.5 py-1 rounded"
-                        style={{
-                          backgroundColor: 'rgba(212, 165, 116, 0.1)',
-                          color: '#d4a574',
-                          fontFamily: 'DM Sans'
-                        }}
-                      >
-                        {pilot.genre}
-                      </span>
+                      <span style={{
+                        fontSize: '0.7rem', padding: '0.2rem 0.5rem',
+                        backgroundColor: 'rgba(212, 165, 116, 0.1)',
+                        color: '#d4a574', borderRadius: '2px'
+                      }}>{pilot.genre}</span>
                     )}
-
                     {pilot.creatorName && (
-                      <span
-                        className="text-xs"
-                        style={{
-                          color: 'rgba(245,240,235,0.5)',
-                          fontFamily: 'DM Sans'
-                        }}
-                      >
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(245,240,235,0.4)' }}>
                         {pilot.creatorName}
                       </span>
                     )}
@@ -159,14 +132,8 @@ const AllPilotsView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogou
 
       {/* Empty State */}
       {!loading && pilots.length === 0 && (
-        <div className="py-16 text-center">
-          <p
-            className="text-base font-light"
-            style={{
-              fontFamily: 'DM Sans',
-              color: 'rgba(245,240,235,0.4)'
-            }}
-          >
+        <div style={{ padding: '4rem 0', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.95rem', fontWeight: 300, color: 'rgba(245,240,235,0.4)' }}>
             No pilots available yet
           </p>
         </div>
