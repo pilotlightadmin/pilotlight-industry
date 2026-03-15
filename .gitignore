@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Build output
+index-built.html
+dist/
+
+# Local environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Local Netlify folder
+.netlify
+node_modules_old/
+
+# Claude session files
+.claude/
+
+# Temp and lock files
+*.tmp
+*.lock
+~$*
+.~lock.*
+
+# Netlify function build artifacts
+netlify/functions/*.zip
+
+# Non-app project folders
+_visualization/
+_pitch-deck/
+_legacy/
+_emails/

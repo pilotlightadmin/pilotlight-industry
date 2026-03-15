@@ -1,0 +1,37 @@
+{
+  "name": "pilot-light",
+  "version": "2.0.0",
+  "description": "Pilot Light - TV Pilot Review Platform",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:legacy": "npm install --save-dev @babel/core @babel/preset-react && node build.js && cp index-built.html index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pilotlightadmin/pilot-light.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pilotlightadmin/pilot-light/issues"
+  },
+  "homepage": "https://github.com/pilotlightadmin/pilot-light#readme",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "@vitejs/plugin-react": "^4.3.0",
+    "netlify-cli": "^24.2.0",
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.988.0",
+    "lucide-react": "^0.460.0",
+    "node-fetch": "^2.7.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}
