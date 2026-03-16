@@ -25,6 +25,47 @@ const apiFetch = async (endpoint, options = {}) => {
 
 const StorageManager = {
   // === AUTH ===
+  checkEmail: async (email) => {
+    try {
+      return await apiFetch('api-auth-login', {
+        method: 'POST',
+        body: JSON.stringify({ email })
+      });
+    } catch (e) {
+      console.error('Check email error:', e);
+      return { success: false, message: 'Failed to check email.' };
+    }
+  },
+
+  validateMemberCode: async (email, memberCode) => {
+    try {
+      return await apiFetch('api-auth-login', {
+        method: 'POST',
+        body: JSON.stringify({ email, memberCode })
+      });
+    } catch (e) {
+      console.error('Validate code error:', e);
+      return { success: false, message: 'Failed to validate code.' };
+    }
+  },
+
+  activateAccount: async (email, memberCode, newPassword) => {
+    try {
+      const data = await apiFetch('api-auth-login', {
+        method: 'POST',
+        body: JSON.stringify({ email, memberCode, newPassword })
+      });
+      if (data.success && data.token) {
+        localStorage.setItem('pilotLightSessionToken', data.token);
+        StorageManager.setCurrentVoter(data.voter);
+      }
+      return data;
+    } catch (e) {
+      console.error('Activate account error:', e);
+      return { success: false, message: 'Failed to activate account.' };
+    }
+  },
+
   loginWithPassword: async (usernameOrEmail, password) => {
     try {
       const data = await apiFetch('api-auth-login', {
@@ -436,6 +477,42 @@ const StorageManager = {
     return StorageManager.loginWithPassword(username, password);
   },
 
+  // === MESSAGING ===
+  sendMessage: async ({ toCreatorUserId, pilotId, pilotTitle, messageText, senderName, fromUserId }) => {
+    try {
+      return await apiFetch('api-send-message', {
+        method: 'POST',
+        body: JSON.stringify({ toCreatorUserId, pilotId, pilotTitle, messageText, senderName, fromUserId })
+      });
+    } catch (e) {
+      console.error('Error sending message:', e);
+      return { success: false, message: 'Failed to send message' };
+    }
+  },
+
+  getMessagesForCreator: async (creatorUserId) => {
+    try {
+      const data = await apiFetch(`api-get-messages?creatorUserId=${encodeURIComponent(creatorUserId)}`);
+      return data.success ? data.messages : [];
+    } catch (e) {
+      console.error('Error fetching messages:', e);
+      return [];
+    }
+  },
+
+  markMessageRead: async (messageId) => {
+    try {
+      return await apiFetch('api-send-message', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'markRead', messageId })
+      });
+    } catch (e) {
+      console.error('Error marking message read:', e);
+      return { success: false };
+    }
+  },
+
+  // === LEGACY CREATORS TABLE (kept for backward compat) ===
   deleteCreator: async (creatorId) => {
     try {
       return await apiFetch('api-admin', {

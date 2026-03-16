@@ -40,6 +40,32 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Cigarette roll — global keyframes */
+@keyframes cigaretteOut {
+  0% { opacity: 1; transform: rotateX(0deg) translateZ(0); }
+  100% { opacity: 0; transform: rotateX(90deg) translateZ(20px); }
+}
+@keyframes cigaretteIn {
+  0% { opacity: 0; transform: rotateX(-90deg) translateZ(20px); }
+  100% { opacity: 1; transform: rotateX(0deg) translateZ(0); }
+}
+
+/* Hover roll effect for buttons */
+@keyframes rollHover {
+  0%   { transform: rotateX(0deg); }
+  30%  { transform: rotateX(25deg); }
+  60%  { transform: rotateX(-8deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.roll-hover {
+  perspective: 500px;
+  transform-style: preserve-3d;
+}
+.roll-hover:hover {
+  animation: rollHover 0.5s ease-out;
+}
+
 @keyframes fadeInSlow {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -56,7 +82,7 @@ a {
   text-decoration: none;
 }
 a:hover {
-  color: #e8c49a;
+  color: #4ecdc4;
 }
 
 /* Form input placeholder color */

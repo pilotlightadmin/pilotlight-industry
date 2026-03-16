@@ -1,470 +1,297 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import StorageManager from '../services/StorageManager';
-import VoterNdaModal from '../components/VoterNdaModal';
-import { saveGlobalNdaAcceptance } from '../utils/helpers';
+import { FlameIcon } from '../components/Icons';
 import '../styles/LandingPage.css';
 
-const LandingPage = ({ onLogin, onForgotPassword }) => {
-  const [isLoginMode, setIsLoginMode] = useState(true);
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
-  const [showPasswordSignup, setShowPasswordSignup] = useState(false);
-  const [showConfirmPasswordSignup, setShowConfirmPasswordSignup] = useState(false);
-  const [showNdaModal, setShowNdaModal] = useState(false);
-  const [pendingUser, setPendingUser] = useState(null);
+const LandingPage = ({ onLogin }) => {
+  const [view, setView] = useState('enter'); // 'enter', 'email', 'memberCode', 'createPassword', 'password'
+  const [animClass, setAnimClass] = useState('');
+  const [email, setEmail] = useState('');
+  const [memberCode, setMemberCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordStep, setPasswordStep] = useState(1); // 1 = enter password, 2 = confirm password
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [userLocation, setUserLocation] = useState('');
+  const timeoutRef = useRef(null);
 
-  // Form state
-  const [loginForm, setLoginForm] = useState({
-    emailOrUsername: '',
-    password: '',
-  });
+  const transitionTo = (nextView) => {
+    setError('');
+    setAnimClass('roll-out');
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setView(nextView);
+      setAnimClass('roll-in');
+    }, 300);
+  };
 
-  const [signupForm, setSignupForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    gender: '',
-    location: '',
-  });
-
-  // Auto-detect location on mount
-  useEffect(() => {
-    detectLocation();
-  }, []);
-
-  const detectLocation = async () => {
+  // Step 1: Check email
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setIsLoading(true);
+    setError('');
     try {
-      const response = await fetch('https://ipapi.co/json/');
-      const data = await response.json();
-      const location = data.city && data.country_name
-        ? `${data.city}, ${data.country_name}`
-        : data.country_name || '';
-      setUserLocation(location);
-      setSignupForm(prev => ({ ...prev, location }));
+      const result = await StorageManager.checkEmail(email.trim());
+      if (!result.success) {
+        setError(result.message || 'Failed to check email.');
+      } else if (!result.found) {
+        setError('No account found with that email.');
+      } else if (result.hasPassword) {
+        transitionTo('password');
+      } else {
+        transitionTo('memberCode');
+      }
     } catch (err) {
-      console.error('Location detection failed:', err);
-      setSignupForm(prev => ({ ...prev, location: '' }));
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target;
-    setLoginForm(prev => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
-  const handleSignupChange = (e) => {
-    const { name, value } = e.target;
-    setSignupForm(prev => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
-  const handleLoginSubmit = async (e) => {
+  // Step 2: Validate member code
+  const handleCodeSubmit = async (e) => {
     e.preventDefault();
+    if (!memberCode.trim()) return;
     setIsLoading(true);
     setError('');
-
     try {
-      const result = await StorageManager.loginWithPassword(
-        loginForm.emailOrUsername,
-        loginForm.password
-      );
+      const result = await StorageManager.validateMemberCode(email, memberCode.trim());
+      if (result.success && result.codeValid) {
+        transitionTo('createPassword');
+      } else {
+        setError(result.message || 'Invalid member code.');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Step 3: Create password (two sub-steps)
+  const handleCreatePasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (passwordStep === 1) {
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters.');
+        return;
+      }
+      setPasswordStep(2);
+      setAnimClass('roll-out');
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        setAnimClass('roll-in');
+      }, 300);
+      return;
+    }
+    // Step 2: confirm
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await StorageManager.activateAccount(email, memberCode, password);
+      if (result.success && result.voter) {
+        onLogin(result.voter);
+      } else {
+        setError(result.message || 'Failed to activate account.');
+      }
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Returning user: password login
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    if (!password.trim()) return;
+    setIsLoading(true);
+    setError('');
+    try {
+      const result = await StorageManager.loginWithPassword(email, password);
       if (result && result.success && result.voter) {
         onLogin(result.voter);
       } else {
-        setError(result.message || 'Invalid credentials. Please try again.');
+        setError(result?.message || 'Incorrect password.');
       }
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      setError(err.message || 'Login failed.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
+  const handleBack = () => {
     setError('');
-
-    // Validation
-    if (!signupForm.username.trim()) {
-      setError('Username is required');
-      return;
-    }
-    if (!signupForm.email.trim()) {
-      setError('Email is required');
-      return;
-    }
-    if (signupForm.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-    if (signupForm.password !== signupForm.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const result = await StorageManager.registerWithPassword(
-        signupForm.username,
-        signupForm.email,
-        signupForm.password,
-        {
-          gender: signupForm.gender || null,
-          location: signupForm.location || null,
-        }
-      );
-
-      if (result && result.success && result.voter) {
-        // Store pending user and show NDA modal
-        setPendingUser(result.voter);
-        setShowNdaModal(true);
-      } else {
-        setError(result.message || 'Registration failed. Please try again.');
-      }
-    } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setPasswordStep(1);
+    if (view === 'email') {
+      transitionTo('enter');
+      setEmail('');
+    } else if (view === 'memberCode') {
+      transitionTo('email');
+      setMemberCode('');
+    } else if (view === 'createPassword') {
+      transitionTo('memberCode');
+    } else if (view === 'password') {
+      transitionTo('email');
     }
   };
-
-  const handleNdaAccept = async () => {
-    try {
-      // Save NDA acceptance
-      await saveGlobalNdaAcceptance(pendingUser.id);
-      setShowNdaModal(false);
-
-      // Call onLogin callback
-      onLogin(pendingUser);
-    } catch (err) {
-      setError('Failed to accept NDA. Please try again.');
-    }
-  };
-
-  const handleNdaDecline = () => {
-    setShowNdaModal(false);
-    setPendingUser(null);
-  };
-
-  if (showNdaModal && pendingUser) {
-    return (
-      <VoterNdaModal
-        userName={pendingUser.username}
-        onAccept={handleNdaAccept}
-        onDecline={handleNdaDecline}
-      />
-    );
-  }
 
   return (
     <div className="landing-page">
-      {/* Animated Flame SVG */}
-      <div className="flame-container">
-        <svg
-          className="flame-svg"
-          viewBox="0 0 100 120"
-          width="80"
-          height="96"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            <radialGradient id="flameGradient" cx="50%" cy="60%">
-              <stop offset="0%" style={{ stopColor: '#e8c49a', stopOpacity: 1 }} />
-              <stop offset="40%" style={{ stopColor: '#d4a574', stopOpacity: 0.9 }} />
-              <stop offset="70%" style={{ stopColor: '#c77f3f', stopOpacity: 0.6 }} />
-              <stop offset="100%" style={{ stopColor: '#8b4513', stopOpacity: 0 }} />
-            </radialGradient>
-            <filter id="flameSoftGlow">
-              <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
+      {/* Top-left wordmark */}
+      <div className="pilot-light-wordmark">Pilot Light</div>
 
-          {/* Flame path with flicker animation */}
-          <path
-            className="flame-path"
-            d="M 50 100 Q 35 80 35 60 Q 35 30 50 10 Q 65 30 65 60 Q 65 80 50 100 Z"
-            fill="url(#flameGradient)"
-            filter="url(#flameSoftGlow)"
-            style={{ transformOrigin: '50% 60%' }}
-          />
-
-          {/* Inner glow layer */}
-          <path
-            className="flame-inner"
-            d="M 50 95 Q 40 80 40 65 Q 40 40 50 20 Q 60 40 60 65 Q 60 80 50 95 Z"
-            fill="#f5deb3"
-            opacity="0.4"
-            filter="url(#flameSoftGlow)"
-            style={{ transformOrigin: '50% 60%' }}
-          />
-        </svg>
-
-        {/* Ambient glow effect behind flame */}
-        <div className="flame-glow"></div>
-      </div>
-
-      {/* Pilot Light Heading */}
-      <h1 className="pilot-light-heading">Pilot Light</h1>
-
-      {/* Tagline */}
-      <p className="tagline">An Exclusive Screening Experience</p>
-
-      {/* Main Content */}
-      {!showNdaModal && (
-        <div className="landing-content">
-          {/* Initial state - just the Enter button */}
-          {!isLoginMode && !showPasswordLogin && !showPasswordSignup && (
-            <button
-              className="enter-button"
-              onClick={() => setShowPasswordLogin(true)}
-            >
-              Enter
-            </button>
-          )}
-
-          {/* Login/Signup Toggle */}
-          {(showPasswordLogin || showPasswordSignup) && (
-            <div className="auth-form-container">
-              {/* Toggle between login and signup */}
-              <div className="auth-mode-toggle">
-                <button
-                  className={`toggle-btn ${showPasswordLogin ? 'active' : ''}`}
-                  onClick={() => {
-                    setShowPasswordLogin(true);
-                    setShowPasswordSignup(false);
-                    setError('');
-                  }}
-                >
-                  Login
-                </button>
-                <button
-                  className={`toggle-btn ${showPasswordSignup ? 'active' : ''}`}
-                  onClick={() => {
-                    setShowPasswordSignup(true);
-                    setShowPasswordLogin(false);
-                    setError('');
-                  }}
-                >
-                  Signup
-                </button>
-              </div>
-
-              {/* Error Message */}
-              {error && <div className="error-message">{error}</div>}
-
-              {/* Login Form */}
-              {showPasswordLogin && !showPasswordSignup && (
-                <form className="auth-form" onSubmit={handleLoginSubmit}>
-                  <div className="form-group">
-                    <label htmlFor="emailOrUsername">Email or Username</label>
-                    <input
-                      type="text"
-                      id="emailOrUsername"
-                      name="emailOrUsername"
-                      value={loginForm.emailOrUsername}
-                      onChange={handleLoginChange}
-                      placeholder="your@email.com or username"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <div className="password-input-wrapper">
-                      <input
-                        type={showPasswordLogin ? 'text' : 'password'}
-                        id="password"
-                        name="password"
-                        value={loginForm.password}
-                        onChange={handleLoginChange}
-                        placeholder="••••••••"
-                        disabled={isLoading}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPasswordLogin(!showPasswordLogin)}
-                      >
-                        {showPasswordLogin ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Signing In...' : 'Sign In'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="forgot-password-link"
-                    onClick={() => onForgotPassword?.()}
-                  >
-                    Forgot Password?
-                  </button>
-                </form>
-              )}
-
-              {/* Signup Form */}
-              {showPasswordSignup && !showPasswordLogin && (
-                <form className="auth-form" onSubmit={handleSignupSubmit}>
-                  <div className="form-group">
-                    <label htmlFor="username">Username</label>
-                    <input
-                      type="text"
-                      id="username"
-                      name="username"
-                      value={signupForm.username}
-                      onChange={handleSignupChange}
-                      placeholder="choose a username"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="email">Email</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={signupForm.email}
-                      onChange={handleSignupChange}
-                      placeholder="your@email.com"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <div className="password-input-wrapper">
-                      <input
-                        type={showPasswordSignup ? 'text' : 'password'}
-                        id="password"
-                        name="password"
-                        value={signupForm.password}
-                        onChange={handleSignupChange}
-                        placeholder="••••••••"
-                        disabled={isLoading}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPasswordSignup(!showPasswordSignup)}
-                      >
-                        {showPasswordSignup ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <div className="password-input-wrapper">
-                      <input
-                        type={showConfirmPasswordSignup ? 'text' : 'password'}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={signupForm.confirmPassword}
-                        onChange={handleSignupChange}
-                        placeholder="••••••••"
-                        disabled={isLoading}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowConfirmPasswordSignup(!showConfirmPasswordSignup)}
-                      >
-                        {showConfirmPasswordSignup ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="gender">Gender (Optional)</label>
-                    <select
-                      id="gender"
-                      name="gender"
-                      value={signupForm.gender}
-                      onChange={handleSignupChange}
-                      disabled={isLoading}
-                    >
-                      <option value="">Select an option</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="non-binary">Non-binary</option>
-                      <option value="prefer-not-to-say">Prefer not to say</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="location">Location</label>
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
-                      value={signupForm.location}
-                      onChange={handleSignupChange}
-                      placeholder="Auto-detected or enter manually"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="submit-button"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Creating Account...' : 'Create Account'}
-                  </button>
-                </form>
-              )}
-
-              {/* Back button */}
-              <button
-                className="back-button"
-                onClick={() => {
-                  setShowPasswordLogin(false);
-                  setShowPasswordSignup(false);
-                  setError('');
-                }}
-              >
-                ← Back
-              </button>
-            </div>
-          )}
+      {/* Centered content */}
+      <div className="landing-center">
+        {/* Flame Icon */}
+        <div className="flame-container">
+          <div className="flame-icon-wrapper">
+            <FlameIcon size={48} />
+          </div>
+          <div className="flame-glow"></div>
         </div>
-      )}
+
+        {/* Auth flow — rolls downward, flame stays put */}
+        <div className="landing-content">
+          <div className={`auth-stage ${animClass}`}>
+            {/* Members button */}
+            {view === 'enter' && (
+              <button className="enter-button" onClick={() => transitionTo('email')}>
+                Members
+              </button>
+            )}
+
+            {/* Email input */}
+            {view === 'email' && (
+              <form className="auth-form" onSubmit={handleEmailSubmit}>
+                {error && <div className="error-message">{error}</div>}
+                <div className="form-group">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError(''); }}
+                    placeholder="Email address"
+                    disabled={isLoading}
+                    autoFocus
+                    required
+                  />
+                </div>
+                <button type="submit" className="submit-button" disabled={isLoading}>
+                  {isLoading ? 'Checking...' : 'Continue'}
+                </button>
+                <button type="button" className="back-button" onClick={handleBack}>Back</button>
+              </form>
+            )}
+
+            {/* Member code input */}
+            {view === 'memberCode' && (
+              <form className="auth-form" onSubmit={handleCodeSubmit}>
+                {error && <div className="error-message">{error}</div>}
+                <div className="form-group">
+                  <input
+                    type="text"
+                    value={memberCode}
+                    onChange={e => { setMemberCode(e.target.value); setError(''); }}
+                    placeholder="Member code"
+                    disabled={isLoading}
+                    autoFocus
+                    required
+                  />
+                </div>
+                <button type="submit" className="submit-button" disabled={isLoading}>
+                  {isLoading ? 'Validating...' : 'Submit'}
+                </button>
+                <button type="button" className="back-button" onClick={handleBack}>Back</button>
+              </form>
+            )}
+
+            {/* Create password (new user) */}
+            {view === 'createPassword' && (
+              <form className="auth-form" onSubmit={handleCreatePasswordSubmit}>
+                {error && <div className="error-message">{error}</div>}
+                {passwordStep === 1 && (
+                  <div className="form-group">
+                    <div className="password-input-wrapper">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => { setPassword(e.target.value); setError(''); }}
+                        placeholder="Create a password"
+                        disabled={isLoading}
+                        autoFocus
+                        required
+                      />
+                      <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {passwordStep === 2 && (
+                  <div className="form-group">
+                    <div className="password-input-wrapper">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={e => { setConfirmPassword(e.target.value); setError(''); }}
+                        placeholder="Confirm password"
+                        disabled={isLoading}
+                        autoFocus
+                        required
+                      />
+                      <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <button type="submit" className="submit-button" disabled={isLoading}>
+                  {isLoading ? 'Setting up...' : passwordStep === 1 ? 'Continue' : 'Set Password'}
+                </button>
+                <button type="button" className="back-button" onClick={handleBack}>Back</button>
+              </form>
+            )}
+
+            {/* Password login (returning user) */}
+            {view === 'password' && (
+              <form className="auth-form" onSubmit={handlePasswordLogin}>
+                {error && <div className="error-message">{error}</div>}
+                <div className="form-group">
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => { setPassword(e.target.value); setError(''); }}
+                      placeholder="Password"
+                      disabled={isLoading}
+                      autoFocus
+                      required
+                    />
+                    <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)}>
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <button type="submit" className="submit-button" disabled={isLoading}>
+                  {isLoading ? 'Entering...' : 'Enter'}
+                </button>
+                <button type="button" className="back-button" onClick={handleBack}>Back</button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

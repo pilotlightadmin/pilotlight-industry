@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import StorageManager from './services/StorageManager';
-import { AnimatedFlameIcon } from './components/Icons';
+// AnimatedFlameIcon removed — using CSS orb for loading
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -254,7 +254,12 @@ function PilotLightPlatform() {
       <div style={{ minHeight: '100vh', background: '#0a0a0a',
         display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5f0eb' }}>
         <div style={{ textAlign: 'center' }}>
-          <AnimatedFlameIcon size={72} style={{ marginBottom: '1rem' }} />
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%', margin: '0 auto 1rem',
+            background: 'radial-gradient(circle, #e8c49a 0%, #d4a574 50%, rgba(199,127,63,0.4) 100%)',
+            animation: 'warmGlow 2s ease-in-out infinite',
+            boxShadow: '0 0 40px rgba(232, 196, 154, 0.4)'
+          }} />
           <p style={{ fontSize: '1.2rem', color: 'rgba(245,240,235,0.8)' }}>Loading...</p>
         </div>
       </div>
@@ -335,7 +340,7 @@ function PilotLightPlatform() {
               setPilotsRemaining(unvoted.length - 1);
             } else {
               setPilotsRemaining(0);
-              setCurrentView('viewing-room');
+              // Stay on video page — VideoPage will show "thank you" message
             }
           }} />;
       case 'creator-portal':

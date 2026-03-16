@@ -1,6 +1,6 @@
 /* Landing Page - Pilot Light */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=DM+Sans:wght@300;400;500&display=swap');
 
 /* Root container */
 .landing-page {
@@ -14,87 +14,54 @@
   padding: 40px 20px;
   animation: fadeInPage 1s ease-in-out;
   font-family: "DM Sans", sans-serif;
+  position: relative;
 }
 
 @keyframes fadeInPage {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Flame Container */
+/* Top-left wordmark — matches Viewing Room header style */
+.pilot-light-wordmark {
+  position: absolute;
+  top: 2rem;
+  left: 2.5rem;
+  font-family: "Playfair Display", serif;
+  font-size: 0.95rem;
+  font-weight: 400;
+  font-style: italic;
+  color: #d4a574;
+  letter-spacing: 0.15em;
+  z-index: 10;
+}
+
+/* Centered content area — anchored from top so flame never moves */
+.landing-center {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Glow Orb Container — fixed position so auth forms don't shift it */
 .flame-container {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 60px;
-  height: 160px;
-  width: 120px;
+  height: 80px;
+  width: 80px;
+  flex-shrink: 0;
 }
 
-.flame-svg {
+/* Flame icon wrapper */
+.flame-icon-wrapper {
   position: relative;
   z-index: 2;
-  filter: drop-shadow(0 0 20px rgba(232, 196, 154, 0.4));
-}
-
-/* Flame path animation */
-.flame-path {
-  animation: flameFlicker 3s ease-in-out infinite;
-}
-
-.flame-inner {
-  animation: flameFlickerInner 3s ease-in-out infinite;
-}
-
-@keyframes flameFlicker {
-  0% {
-    transform: scaleY(0.95) scaleX(0.98);
-    opacity: 0.95;
-  }
-  25% {
-    transform: scaleY(1.05) scaleX(0.97);
-    opacity: 1;
-  }
-  50% {
-    transform: scaleY(0.98) scaleX(1.02);
-    opacity: 0.93;
-  }
-  75% {
-    transform: scaleY(1.03) scaleX(0.99);
-    opacity: 0.98;
-  }
-  100% {
-    transform: scaleY(0.95) scaleX(0.98);
-    opacity: 0.95;
-  }
-}
-
-@keyframes flameFlickerInner {
-  0% {
-    opacity: 0.35;
-    transform: scaleY(0.93) scaleX(0.96);
-  }
-  25% {
-    opacity: 0.42;
-    transform: scaleY(1.07) scaleX(0.98);
-  }
-  50% {
-    opacity: 0.38;
-    transform: scaleY(0.96) scaleX(1.04);
-  }
-  75% {
-    opacity: 0.44;
-    transform: scaleY(1.05) scaleX(1.01);
-  }
-  100% {
-    opacity: 0.35;
-    transform: scaleY(0.93) scaleX(0.96);
-  }
 }
 
 /* Ambient glow behind flame */
@@ -110,83 +77,59 @@
 }
 
 @keyframes glowPulse {
-  0% {
-    box-shadow: 0 0 40px rgba(232, 196, 154, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 60px rgba(232, 196, 154, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 40px rgba(232, 196, 154, 0.3);
-  }
+  0% { box-shadow: 0 0 40px rgba(232, 196, 154, 0.3); }
+  50% { box-shadow: 0 0 60px rgba(232, 196, 154, 0.5); }
+  100% { box-shadow: 0 0 40px rgba(232, 196, 154, 0.3); }
 }
 
-/* Headings */
-.pilot-light-heading {
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 4.5rem;
-  font-weight: 300;
-  color: #f5f0eb;
-  margin: 0;
-  letter-spacing: 0.2em;
-  text-align: center;
-  margin-bottom: 20px;
-  animation: fadeInDown 1s ease-in-out 0.2s both;
-}
-
-.tagline {
-  font-family: "DM Sans", sans-serif;
-  font-size: 0.95rem;
-  font-weight: 300;
-  color: #a39e94;
-  margin: 0;
-  letter-spacing: 0.08em;
-  text-align: center;
-  margin-bottom: 80px;
-  animation: fadeInUp 1s ease-in-out 0.3s both;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Landing Content */
+/* Landing Content — fixed spacing below flame */
 .landing-content {
   display: flex;
   align-items: center;
-  justify-content: center;
   flex-direction: column;
   width: 100%;
   max-width: 500px;
-  animation: fadeInContent 1s ease-in-out 0.4s both;
+  margin-top: 80px;
 }
 
-@keyframes fadeInContent {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
+/* Auth stage — cigarette roll animation */
+.auth-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  perspective: 600px;
+}
+
+/* Current face rolls away forward */
+.auth-stage.roll-out {
+  animation: cigaretteOut 0.35s ease-in forwards;
+}
+
+/* New face rolls in from behind */
+.auth-stage.roll-in {
+  animation: cigaretteIn 0.35s ease-out forwards;
+}
+
+@keyframes cigaretteOut {
+  0% {
     opacity: 1;
-    transform: scale(1);
+    transform: rotateX(0deg) translateZ(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateX(90deg) translateZ(20px);
+  }
+}
+
+@keyframes cigaretteIn {
+  0% {
+    opacity: 0;
+    transform: rotateX(-90deg) translateZ(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(0deg) translateZ(0);
   }
 }
 
@@ -195,9 +138,9 @@
   background: transparent;
   border: 1px solid #d4a574;
   color: #d4a574;
-  padding: 16px 48px;
+  padding: 12px 36px;
   font-family: "DM Sans", sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -205,6 +148,12 @@
   transition: all 0.4s ease;
   position: relative;
   overflow: hidden;
+  perspective: 500px;
+  transform-style: preserve-3d;
+}
+
+.enter-button:hover {
+  animation: rollHover 0.5s ease-out;
 }
 
 .enter-button::before {
@@ -217,9 +166,9 @@
 }
 
 .enter-button:hover {
-  border-color: #e8c49a;
-  color: #e8c49a;
-  box-shadow: 0 0 20px rgba(232, 196, 154, 0.4), inset 0 0 20px rgba(232, 196, 154, 0.1);
+  border-color: #4ecdc4;
+  color: #4ecdc4;
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.3), inset 0 0 20px rgba(78, 205, 196, 0.08);
 }
 
 .enter-button:hover::before {
@@ -228,73 +177,6 @@
 
 .enter-button:active {
   transform: scale(0.98);
-}
-
-/* Auth Form Container */
-.auth-form-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: slideInUp 0.5s ease-out;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Auth Mode Toggle */
-.auth-mode-toggle {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 40px;
-  justify-content: center;
-}
-
-.toggle-btn {
-  background: transparent;
-  border: none;
-  color: #a39e94;
-  font-family: "DM Sans", sans-serif;
-  font-size: 0.95rem;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  padding: 8px 16px;
-  text-transform: uppercase;
-  position: relative;
-  transition: color 0.3s ease;
-}
-
-.toggle-btn::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  width: 0;
-  height: 1px;
-  background: #d4a574;
-  transform: translateX(-50%);
-  transition: width 0.3s ease;
-}
-
-.toggle-btn.active {
-  color: #f5f0eb;
-}
-
-.toggle-btn.active::after {
-  width: 80%;
-}
-
-.toggle-btn:hover {
-  color: #d4a574;
 }
 
 /* Auth Form */
@@ -321,8 +203,7 @@
   text-transform: uppercase;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
   background-color: transparent;
   border: 1px solid rgba(212, 165, 116, 0.2);
   color: #f5f0eb;
@@ -337,28 +218,15 @@
   color: #5a574f;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
   outline: none;
   border-color: #d4a574;
   box-shadow: 0 0 12px rgba(212, 165, 116, 0.25);
 }
 
-.form-group input:disabled,
-.form-group select:disabled {
+.form-group input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-/* Select styling */
-.form-group select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4a574' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
 }
 
 /* Password input wrapper */
@@ -390,53 +258,56 @@
   color: #d4a574;
 }
 
-/* Submit Button */
+/* Submit Button — matches Members button outline style */
 .submit-button {
-  background: linear-gradient(135deg, #d4a574 0%, #b8860b 100%);
-  border: none;
-  color: #0a0a0a;
-  padding: 14px 32px;
+  background: transparent;
+  border: 1px solid #d4a574;
+  color: #d4a574;
+  padding: 12px 36px;
   font-family: "DM Sans", sans-serif;
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 16px;
-  border-radius: 2px;
+  transition: all 0.4s ease;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+  perspective: 500px;
+  transform-style: preserve-3d;
 }
 
 .submit-button:hover:not(:disabled) {
-  box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
-  transform: translateY(-2px);
+  animation: rollHover 0.5s ease-out;
+}
+
+.submit-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(212, 165, 116, 0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  border-color: #4ecdc4;
+  color: #4ecdc4;
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.3), inset 0 0 20px rgba(78, 205, 196, 0.08);
+}
+
+.submit-button:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 .submit-button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: scale(0.98);
 }
 
 .submit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-/* Forgot Password Link */
-.forgot-password-link {
-  background: none;
-  border: none;
-  color: #8b7f77;
-  font-family: "DM Sans", sans-serif;
-  font-size: 0.85rem;
-  cursor: pointer;
-  text-decoration: none;
-  transition: color 0.3s ease;
-  padding: 4px 0;
-  margin-top: 8px;
-}
-
-.forgot-password-link:hover {
-  color: #d4a574;
 }
 
 /* Back Button */
@@ -468,37 +339,25 @@
   border-radius: 2px;
   margin-bottom: 16px;
   animation: shake 0.5s ease-out;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-8px);
-  }
-  75% {
-    transform: translateX(8px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
 }
 
 /* Responsive Design */
 @media (max-width: 640px) {
-  .pilot-light-heading {
-    font-size: 3rem;
+  .pilot-light-wordmark {
+    top: 1.5rem;
+    left: 1.5rem;
+    font-size: 0.9rem;
   }
 
-  .tagline {
-    font-size: 0.85rem;
-    margin-bottom: 60px;
-  }
-
-  .auth-form-container {
-    padding: 0 20px;
-  }
-
-  .form-group input,
-  .form-group select {
+  .form-group input {
     font-size: 16px; /* Prevents zoom on mobile */
   }
 }
@@ -508,26 +367,13 @@
     padding: 20px 16px;
   }
 
-  .pilot-light-heading {
-    font-size: 2.5rem;
-    margin-bottom: 16px;
-  }
-
-  .tagline {
-    font-size: 0.8rem;
-    margin-bottom: 50px;
+  .pilot-light-wordmark {
+    top: 1rem;
+    left: 1rem;
   }
 
   .flame-container {
-    margin-bottom: 50px;
-  }
-
-  .auth-mode-toggle {
-    gap: 16px;
-  }
-
-  .toggle-btn {
-    font-size: 0.85rem;
+    margin-bottom: 32px;
   }
 
   .enter-button {

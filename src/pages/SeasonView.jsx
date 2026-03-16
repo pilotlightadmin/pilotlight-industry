@@ -56,6 +56,7 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
       {/* Header */}
       <div style={{ marginBottom: '3rem' }}>
         <button
+          className="roll-hover"
           onClick={onBack}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
@@ -71,14 +72,14 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
         </button>
 
         <h1 style={{
-          fontFamily: '"Cormorant Garamond", Georgia, serif',
-          fontSize: '2.8rem', fontWeight: 300, letterSpacing: '0.15em',
-          color: '#f5f0eb', margin: '0 0 0.75rem 0'
+          fontFamily: '"Playfair Display", serif',
+          fontSize: '2.8rem', fontWeight: 400, letterSpacing: '0.06em',
+          color: '#f5f0eb', margin: '0 0 0.75rem 0', fontStyle: 'italic'
         }}>The Season</h1>
         <p style={{
           fontSize: '0.95rem', fontWeight: 300,
           color: 'rgba(245,240,235,0.5)', margin: 0
-        }}>The highest-rated pilots this season</p>
+        }}>Content lineup.</p>
       </div>
 
       {/* Loading */}
@@ -96,6 +97,7 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
             return (
               <div
                 key={pilot.id}
+                className="roll-hover"
                 onClick={() => onSelectPilot(pilot)}
                 style={{
                   display: 'flex', gap: '1.5rem', padding: '1.25rem',
@@ -125,9 +127,9 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h3 style={{
-                    fontFamily: '"Cormorant Garamond", Georgia, serif',
-                    fontSize: '1.25rem', fontWeight: 300, color: '#f5f0eb',
-                    margin: '0 0 0.5rem 0', letterSpacing: '0.05em'
+                    fontFamily: '"Playfair Display", serif',
+                    fontSize: '1.25rem', fontWeight: 400, color: '#f5f0eb',
+                    margin: '0 0 0.5rem 0', letterSpacing: '0.02em', fontStyle: 'italic'
                   }}>{pilot.pilotTitle}</h3>
                   <p style={{
                     fontSize: '0.85rem', color: 'rgba(245,240,235,0.5)',
@@ -137,8 +139,8 @@ const SeasonView = ({ currentUser, onSelectPilot, onBack, onNavigate, onLogout }
                     {pilot.genre && (
                       <span style={{
                         fontSize: '0.7rem', padding: '0.25rem 0.6rem',
-                        backgroundColor: 'rgba(212, 165, 116, 0.1)',
-                        color: '#d4a574', borderRadius: '2px'
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        color: '#4ecdc4', borderRadius: '2px'
                       }}>{pilot.genre}</span>
                     )}
                     {pilot.creatorName && (

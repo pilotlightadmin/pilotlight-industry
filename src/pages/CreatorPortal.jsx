@@ -10,6 +10,9 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
   const [expandedComments, setExpandedComments] = useState({});
   const [commentLoading, setCommentLoading] = useState({});
   const [comments, setComments] = useState({});
+  const [activeTab, setActiveTab] = useState('pilots'); // 'pilots' | 'inbox'
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   // Get default aboutMe from creator application if not yet set
   const getDefaultAboutMe = () => {
@@ -43,9 +46,27 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
     setLoading(false);
   };
 
+  const loadMessages = async () => {
+    setMessagesLoading(true);
+    try {
+      const msgs = await StorageManager.getMessagesForCreator(currentUser.id);
+      setMessages(msgs || []);
+    } catch (err) {
+      console.error('Error loading messages:', err);
+      setMessages([]);
+    }
+    setMessagesLoading(false);
+  };
+
   useEffect(() => {
     loadPilots();
   }, [currentUser.id]);
+
+  useEffect(() => {
+    if (activeTab === 'inbox') {
+      loadMessages();
+    }
+  }, [activeTab]);
 
   const handleProfileSave = async () => {
     setProfileSaving(true);
@@ -64,6 +85,25 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
     }
     setProfileSaving(false);
   };
+
+  const handleMarkRead = async (messageId) => {
+    try {
+      await StorageManager.markMessageRead(messageId);
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isRead: true } : m));
+    } catch (err) {
+      console.error('Error marking message read:', err);
+    }
+  };
+
+  const unreadCount = messages.filter(m => !m.isRead).length;
+
+  // Group messages by pilot
+  const messagesByPilot = messages.reduce((acc, msg) => {
+    const key = msg.pilotTitle || msg.pilotId || 'Unknown';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(msg);
+    return acc;
+  }, {});
 
   const toggleComments = async (pilotId) => {
     if (expandedComments[pilotId]) {
@@ -92,7 +132,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
           onClick={() => setShowProfileModal(false)}>
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,165,116,0.15)', borderRadius: '16px', padding: '2rem', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: '1.5rem', fontFamily: 'Cormorant Garamond', fontWeight: 300, letterSpacing: '0.15em', marginBottom: '1.5rem', color: '#f5f0eb' }}>EDIT PROFILE</h2>
+            <h2 style={{ fontSize: '1.5rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '1.5rem', color: '#f5f0eb', fontStyle: 'italic' }}>Edit Profile</h2>
 
             {profileError && <div style={{ padding: '1rem', background: 'rgba(255,99,72,0.15)', borderRadius: '10px', color: '#ff7675', marginBottom: '1rem', fontSize: '0.85rem' }}>{profileError}</div>}
             {profileSuccess && <div style={{ padding: '1rem', background: 'rgba(0,184,148,0.15)', borderRadius: '10px', color: '#00b894', marginBottom: '1rem', fontSize: '0.85rem' }}>Profile updated successfully!</div>}
@@ -125,7 +165,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <FlameIcon size={32} style={{ color: '#d4a574' }} />
-          <h1 style={{ fontSize: '2.5rem', fontFamily: 'Cormorant Garamond', fontWeight: 300, letterSpacing: '0.15em', margin: 0, color: '#f5f0eb' }}>CREATOR PORTAL</h1>
+          <h1 style={{ fontSize: '2.5rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', margin: 0, color: '#f5f0eb', fontStyle: 'italic' }}>Creator Portal</h1>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={() => setShowProfileModal(true)} style={{ padding: '0.75rem 1.5rem', background: 'rgba(212,165,116,0.1)', border: '1px solid rgba(212,165,116,0.3)', borderRadius: '6px', color: '#d4a574', fontWeight: 400, cursor: 'pointer', fontFamily: 'DM Sans', fontSize: '0.9rem' }}>
@@ -137,12 +177,127 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
         </div>
       </div>
 
-      {/* Upload New Button */}
-      <div style={{ marginBottom: '2rem' }}>
-        <button onClick={onUploadNew} style={{ padding: '1rem 2rem', background: '#d4a574', border: 'none', borderRadius: '8px', color: '#0a0a0a', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', fontFamily: 'DM Sans' }}>
-          + Upload New Pilot
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem', borderBottom: '1px solid rgba(212,165,116,0.1)', paddingBottom: '0' }}>
+        <button
+          onClick={() => setActiveTab('pilots')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontFamily: '"Playfair Display", serif', fontSize: '1rem', fontWeight: 400,
+            letterSpacing: '0.04em', fontStyle: 'italic',
+            color: activeTab === 'pilots' ? '#f5f0eb' : 'rgba(245,240,235,0.4)',
+            paddingBottom: '1rem', position: 'relative',
+            borderBottom: activeTab === 'pilots' ? '2px solid #d4a574' : '2px solid transparent',
+            transition: 'all 0.3s ease'
+          }}
+        >
+          My Pilots
+        </button>
+        <button
+          onClick={() => setActiveTab('inbox')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontFamily: '"Playfair Display", serif', fontSize: '1rem', fontWeight: 400,
+            letterSpacing: '0.04em', fontStyle: 'italic',
+            color: activeTab === 'inbox' ? '#f5f0eb' : 'rgba(245,240,235,0.4)',
+            paddingBottom: '1rem', position: 'relative',
+            borderBottom: activeTab === 'inbox' ? '2px solid #d4a574' : '2px solid transparent',
+            transition: 'all 0.3s ease',
+            display: 'flex', alignItems: 'center', gap: '0.5rem'
+          }}
+        >
+          Inbox
+          {unreadCount > 0 && (
+            <span style={{
+              background: '#d4a574', color: '#0a0a0a', borderRadius: '50%',
+              width: '20px', height: '20px', display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.7rem', fontFamily: '"DM Sans", sans-serif', fontWeight: 600
+            }}>{unreadCount}</span>
+          )}
         </button>
       </div>
+
+      {/* INBOX TAB */}
+      {activeTab === 'inbox' && (
+        <div>
+          {messagesLoading ? (
+            <div style={{ textAlign: 'center', padding: '4rem' }}>
+              <Loader2 size={48} style={{ color: '#d4a574', animation: 'spin 1s linear infinite', margin: '0 auto', display: 'block' }} />
+              <p style={{ color: 'rgba(245,240,235,0.6)', marginTop: '1rem', fontFamily: 'DM Sans' }}>Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(212,165,116,0.15)' }}>
+              <p style={{ color: 'rgba(245,240,235,0.5)', fontFamily: '"DM Sans", sans-serif', fontSize: '0.95rem' }}>No messages yet.</p>
+            </div>
+          ) : (
+            <div style={{ maxWidth: '700px' }}>
+              {Object.entries(messagesByPilot).map(([pilotTitle, msgs]) => (
+                <div key={pilotTitle} style={{ marginBottom: '2rem' }}>
+                  <h3 style={{
+                    fontFamily: '"Playfair Display", serif', fontSize: '1.1rem', fontWeight: 400,
+                    letterSpacing: '0.04em', fontStyle: 'italic', color: '#d4a574',
+                    margin: '0 0 1rem 0', paddingBottom: '0.5rem',
+                    borderBottom: '1px solid rgba(212,165,116,0.15)'
+                  }}>{pilotTitle}</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {msgs.map(msg => (
+                      <div
+                        key={msg.id}
+                        onClick={() => !msg.isRead && handleMarkRead(msg.id)}
+                        style={{
+                          padding: '1rem 1.25rem',
+                          background: msg.isRead ? 'rgba(255,255,255,0.02)' : 'rgba(212,165,116,0.06)',
+                          border: '1px solid ' + (msg.isRead ? 'rgba(212,165,116,0.1)' : 'rgba(212,165,116,0.25)'),
+                          borderRadius: '8px', cursor: msg.isRead ? 'default' : 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <span style={{
+                            fontFamily: '"DM Sans", sans-serif', fontSize: '0.8rem',
+                            fontWeight: msg.isRead ? 300 : 500,
+                            color: msg.isRead ? 'rgba(245,240,235,0.4)' : '#d4a574'
+                          }}>
+                            {msg.senderName || 'Anonymous'}
+                            {!msg.isRead && (
+                              <span style={{
+                                display: 'inline-block', width: '6px', height: '6px',
+                                borderRadius: '50%', background: '#4ecdc4', marginLeft: '8px',
+                                verticalAlign: 'middle'
+                              }} />
+                            )}
+                          </span>
+                          <span style={{
+                            fontFamily: '"DM Sans", sans-serif', fontSize: '0.75rem',
+                            color: 'rgba(245,240,235,0.3)'
+                          }}>
+                            {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                          </span>
+                        </div>
+                        <p style={{
+                          margin: 0, fontFamily: '"DM Sans", sans-serif', fontSize: '0.9rem',
+                          fontWeight: 300, color: 'rgba(245,240,235,0.8)', lineHeight: 1.6
+                        }}>{msg.messageText}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PILOTS TAB */}
+      {activeTab === 'pilots' && (
+        <>
+          {/* Upload New Button */}
+          <div style={{ marginBottom: '2rem' }}>
+            <button onClick={onUploadNew} style={{ padding: '1rem 2rem', background: '#d4a574', border: 'none', borderRadius: '8px', color: '#0a0a0a', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', fontFamily: 'DM Sans' }}>
+              + Upload New Pilot
+            </button>
+          </div>
 
       {/* Loading */}
       {loading ? (
@@ -160,7 +315,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
       ) : (
         <>
           {/* My Pilots Section */}
-          <h2 style={{ fontSize: '1.8rem', fontFamily: 'Cormorant Garamond', fontWeight: 300, letterSpacing: '0.15em', marginBottom: '2rem', color: '#f5f0eb' }}>MY PILOTS</h2>
+          <h2 style={{ fontSize: '1.8rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '2rem', color: '#f5f0eb', fontStyle: 'italic' }}>My Pilots</h2>
 
           {/* Pilots Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
@@ -258,6 +413,8 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
               );
             })}
           </div>
+        </>
+      )}
         </>
       )}
     </div>

@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { FlameIcon } from '../components/Icons';
+import StorageManager from '../services/StorageManager';
 
-const ViewingRoom = ({ currentUser, onNavigate, onLogout }) => {
+const ViewingRoom = ({ currentUser, onNavigate, onLogout, onSelectPilot }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadingSeason, setLoadingSeason] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
   }, []);
+
+  const handleSeasonClick = async () => {
+    setLoadingSeason(true);
+    try {
+      const pilots = await StorageManager.getPilotsForVoting();
+      if (pilots && pilots.length > 0) {
+        const randomPilot = pilots[Math.floor(Math.random() * pilots.length)];
+        onSelectPilot(randomPilot);
+      } else {
+        onNavigate('season');
+      }
+    } catch (err) {
+      console.error('Failed to load pilots:', err);
+      onNavigate('season');
+    } finally {
+      setLoadingSeason(false);
+    }
+  };
 
   return (
     <div style={{
@@ -19,95 +38,85 @@ const ViewingRoom = ({ currentUser, onNavigate, onLogout }) => {
       opacity: isLoaded ? 1 : 0,
       transition: 'opacity 0.8s ease-in-out'
     }}>
-      {/* Header */}
-      <header style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '2rem 3rem',
-        borderBottom: '1px solid rgba(212, 165, 116, 0.1)',
-        position: 'relative',
+      {/* Pilot Light wordmark — top left, matching landing page */}
+      <div style={{
+        position: 'absolute',
+        top: '2rem',
+        left: '2.5rem',
+        fontFamily: '"Playfair Display", serif',
+        fontSize: '0.95rem',
+        fontWeight: 400,
+        fontStyle: 'italic',
+        color: '#d4a574',
+        letterSpacing: '0.15em',
         zIndex: 10
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <FlameIcon size={20} />
-          <h1 style={{
-            fontFamily: '"Cormorant Garamond", Georgia, serif',
-            fontSize: '0.95rem',
-            fontWeight: 300,
-            letterSpacing: '0.15em',
-            margin: 0,
-            textTransform: 'uppercase',
-            color: '#f5f0eb'
-          }}>The Viewing Room</h1>
-        </div>
-        <button
-          onClick={onLogout}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'rgba(245, 240, 235, 0.4)',
-            fontFamily: '"DM Sans", sans-serif',
-            fontSize: '0.75rem',
-            fontWeight: 300,
-            letterSpacing: '0.08em',
-            cursor: 'pointer',
-            textTransform: 'uppercase',
-            padding: '0.5rem 0'
-          }}
-          onMouseEnter={e => e.target.style.color = 'rgba(245, 240, 235, 0.7)'}
-          onMouseLeave={e => e.target.style.color = 'rgba(245, 240, 235, 0.4)'}
-        >Logout</button>
-      </header>
+      }}>Pilot Light</div>
 
-      {/* Main Content */}
+      {/* Logout — top right */}
+      <button
+        onClick={onLogout}
+        style={{
+          position: 'absolute',
+          top: '2rem',
+          right: '2.5rem',
+          background: 'none',
+          border: 'none',
+          color: 'rgba(245, 240, 235, 0.4)',
+          fontFamily: '"DM Sans", sans-serif',
+          fontSize: '0.75rem',
+          fontWeight: 300,
+          letterSpacing: '0.08em',
+          cursor: 'pointer',
+          textTransform: 'uppercase',
+          padding: '0.5rem 0',
+          zIndex: 10
+        }}
+        onMouseEnter={e => e.target.style.color = 'rgba(245, 240, 235, 0.7)'}
+        onMouseLeave={e => e.target.style.color = 'rgba(245, 240, 235, 0.4)'}
+      >Logout</button>
+
+      {/* Main Content — centered on page */}
       <main style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4rem 2rem',
+        padding: '2rem',
         maxWidth: '900px',
         margin: '0 auto',
-        minHeight: 'calc(100vh - 140px)',
+        minHeight: '100vh',
         textAlign: 'center'
       }}>
-        <h2 style={{
-          fontFamily: '"Cormorant Garamond", Georgia, serif',
-          fontSize: '2.5rem',
-          fontWeight: 300,
-          margin: '0 0 2rem 0',
-          color: '#f5f0eb',
-          lineHeight: 1.2
-        }}>Welcome to the Viewing Room</h2>
-
         <p style={{
           fontFamily: '"DM Sans", sans-serif',
-          fontSize: '0.95rem',
+          fontSize: '1.15rem',
           fontWeight: 300,
-          color: 'rgba(245, 240, 235, 0.5)',
-          margin: '0 0 3rem 0',
+          color: 'rgba(245, 240, 235, 0.35)',
+          margin: '0 0 1.5rem 0',
           lineHeight: 1.7,
           maxWidth: '600px'
         }}>
-          Watch. Rate. Comment. Your anonymous feedback helps discover the next generation of television. Browse the current season's top-rated pilots or explore the full collection.
+          Your anonymous contributions are greatly valued.
         </p>
 
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '400px',
           marginBottom: '3rem'
         }}>
-          {/* The Season Card */}
+          {/* The Season — Featured Button */}
           <button
-            onClick={() => onNavigate('season')}
+            className="roll-hover"
+            onClick={handleSeasonClick}
+            disabled={loadingSeason}
             style={{
-              padding: '2.5rem 2rem',
-              border: '1px solid rgba(212, 165, 116, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              width: '100%',
+              padding: '3rem 2rem',
+              border: '1px solid rgba(212, 165, 116, 0.4)',
+              backgroundColor: 'rgba(212, 165, 116, 0.06)',
               cursor: 'pointer',
               transition: 'all 0.4s ease',
               textAlign: 'center',
@@ -116,21 +125,22 @@ const ViewingRoom = ({ currentUser, onNavigate, onLogout }) => {
               color: '#f5f0eb'
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.5)';
-              e.currentTarget.style.boxShadow = '0 0 30px rgba(212, 165, 116, 0.15), inset 0 0 30px rgba(212, 165, 116, 0.05)';
+              e.currentTarget.style.borderColor = 'rgba(78, 205, 196, 0.5)';
+              e.currentTarget.style.boxShadow = '0 0 40px rgba(212, 165, 116, 0.2), inset 0 0 40px rgba(212, 165, 116, 0.08)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.4)';
               e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <h3 style={{
-              fontFamily: '"Cormorant Garamond", Georgia, serif',
-              fontSize: '1.5rem',
-              fontWeight: 300,
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '1.8rem',
+              fontWeight: 400,
               margin: '0 0 0.75rem 0',
               color: '#f5f0eb',
-              letterSpacing: '0.08em'
+              letterSpacing: '0.04em',
+              fontStyle: 'italic'
             }}>The Season</h3>
             <p style={{
               fontFamily: '"DM Sans", sans-serif',
@@ -139,63 +149,34 @@ const ViewingRoom = ({ currentUser, onNavigate, onLogout }) => {
               color: 'rgba(245, 240, 235, 0.5)',
               margin: 0,
               lineHeight: 1.5
-            }}>Top-rated pilots, curated for your review</p>
+            }}>View the slate</p>
           </button>
 
-          {/* All Pilots Card */}
+          {/* All Pilots — Text Link */}
           <button
+            className="roll-hover"
             onClick={() => onNavigate('all-pilots')}
             style={{
-              padding: '2.5rem 2rem',
-              border: '1px solid rgba(212, 165, 116, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              cursor: 'pointer',
-              transition: 'all 0.4s ease',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)',
-              borderRadius: 0,
-              color: '#f5f0eb'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.5)';
-              e.currentTarget.style.boxShadow = '0 0 30px rgba(212, 165, 116, 0.15), inset 0 0 30px rgba(212, 165, 116, 0.05)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(212, 165, 116, 0.2)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <h3 style={{
-              fontFamily: '"Cormorant Garamond", Georgia, serif',
-              fontSize: '1.5rem',
-              fontWeight: 300,
-              margin: '0 0 0.75rem 0',
-              color: '#f5f0eb',
-              letterSpacing: '0.08em'
-            }}>All Pilots</h3>
-            <p style={{
-              fontFamily: '"DM Sans", sans-serif',
-              fontSize: '0.85rem',
-              fontWeight: 300,
+              marginTop: '1.5rem',
+              background: 'none',
+              border: 'none',
               color: 'rgba(245, 240, 235, 0.5)',
-              margin: 0,
-              lineHeight: 1.5
-            }}>Explore the full collection</p>
+              fontFamily: '"DM Sans", sans-serif',
+              fontSize: '0.9rem',
+              fontWeight: 300,
+              cursor: 'pointer',
+              transition: 'color 0.3s ease',
+              padding: '0.5rem 0',
+              letterSpacing: '0.05em'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#4ecdc4'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(245, 240, 235, 0.5)'; }}
+          >
+            Browse All Pilots
           </button>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center',
-        padding: '2rem',
-        borderTop: '1px solid rgba(212, 165, 116, 0.1)',
-        color: 'rgba(245, 240, 235, 0.3)',
-        fontSize: '0.75rem',
-        fontWeight: 300,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase'
-      }}>Pilot Light</footer>
     </div>
   );
 };
