@@ -102,6 +102,26 @@ function PilotLightPlatform() {
   useEffect(() => {
     const init = async () => {
       try {
+        // === DEV MODE: Skip login when Airtable API is unavailable ===
+        // Remove this block when API is back (April 1st)
+        // TEMPORARILY DISABLED to work on landing page
+        // const DEV_BYPASS_LOGIN = import.meta.env.DEV;
+        // if (DEV_BYPASS_LOGIN) {
+        //   const mockUser = {
+        //     id: 'dev-user',
+        //     name: 'Dev Tester',
+        //     email: 'dev@pilotlighthq.com',
+        //     creatorStatus: 'approved',
+        //     displayName: 'Dev Tester'
+        //   };
+        //   setCurrentUser(mockUser);
+        //   setPilots([]);
+        //   setCurrentView('browse');
+        //   setLoading(false);
+        //   return;
+        // }
+        // === END DEV MODE ===
+
         // If reset-password was detected from URL, skip normal init routing
         if (resetPasswordDetectedRef.current) {
           setLoading(false);

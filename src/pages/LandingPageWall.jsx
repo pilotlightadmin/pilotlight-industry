@@ -1,12 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import StorageManager from '../services/StorageManager';
 
-function LandingPageWall({ onLoginSuccess }) {
-  const [mode, setMode] = useState('signup'); // 'signup', 'login', 'success'
+function LandingPageWall({ onLoginSuccess, onNavigate }) {
+  const [mode, setMode] = useState('main'); // 'main', 'login', 'waitlist-success'
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteError, setInviteError] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
   const [loginId, setLoginId] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [loginStep, setLoginStep] = useState(1); // 1 = username, 2 = password
+  const [focusedInput, setFocusedInput] = useState(null);
+  const [hoveredBtn, setHoveredBtn] = useState(null);
   const particlesRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -16,7 +23,6 @@ function LandingPageWall({ onLoginSuccess }) {
     if (!container) return;
     container.innerHTML = '';
 
-    // Ambient particles
     const ambientColors = ['#4ecdc4', '#fff5cc'];
     for (let i = 0; i < 12; i++) {
       const p = document.createElement('div');
@@ -31,7 +37,6 @@ function LandingPageWall({ onLoginSuccess }) {
       container.appendChild(p);
     }
 
-    // Embers — spread across full page width
     const emberColors = ['#ff6b6b', '#ff8a65', '#feca57', '#ffb74d', '#fff5cc', '#ff7043'];
     for (let i = 0; i < 60; i++) {
       const e = document.createElement('div');
@@ -50,9 +55,25 @@ function LandingPageWall({ onLoginSuccess }) {
     }
   }, []);
 
-  const handleSignup = (e) => {
-    // Let form POST to Brevo via hidden iframe
-    setTimeout(() => setMode('success'), 600);
+  const handleInviteSubmit = async (e) => {
+    e.preventDefault();
+    setInviteError('');
+    setInviteLoading(true);
+    try {
+      const result = await StorageManager.redeemInviteCode(inviteCode.trim());
+      if (result && result.voter) {
+        onLoginSuccess(result.voter);
+      } else {
+        setInviteError('Invalid invite code');
+      }
+    } catch (err) {
+      setInviteError(err.message || 'Invalid invite code');
+    }
+    setInviteLoading(false);
+  };
+
+  const handleWaitlistSubmit = (e) => {
+    setTimeout(() => setMode('waitlist-success'), 600);
   };
 
   const handleLogin = async (e) => {
@@ -72,8 +93,8 @@ function LandingPageWall({ onLoginSuccess }) {
     setLoginLoading(false);
   };
 
-  // Inject keyframes for particles
-  const wallKeyframes = `
+  const keyframes = `
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
     @keyframes wallFloatUp {
       0%   { transform: translateY(0) scale(1); opacity: 0; }
       10%  { opacity: 0.5; }
@@ -91,205 +112,415 @@ function LandingPageWall({ onLoginSuccess }) {
       0%, 100% { transform: scale(1); opacity: 0.5; }
       50% { transform: scale(1.15); opacity: 1; }
     }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes successPop {
+      0% { transform: scale(0.85); opacity: 0; }
+      60% { transform: scale(1.03); }
+      100% { transform: scale(1); opacity: 1; }
+    }
   `;
 
-  const inputStyle = {
-    width: '100%', padding: '0.85rem 1rem', borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)',
-    color: '#fff', fontSize: '0.95rem', fontFamily: 'inherit', outline: 'none',
-    transition: 'border-color 0.2s, background 0.2s', boxSizing: 'border-box'
+  const inputBase = {
+    width: '100%', padding: '0.9rem 1rem', borderRadius: '12px',
+    border: '1.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)',
+    color: '#fff', fontSize: '0.95rem', fontFamily: "'Outfit', sans-serif", outline: 'none',
+    transition: 'all 0.25s ease', boxSizing: 'border-box'
   };
 
-  const btnStyle = {
-    width: '100%', padding: '0.9rem', border: 'none', borderRadius: '12px',
+  const getInputStyle = (name) => ({
+    ...inputBase,
+    borderColor: focusedInput === name ? 'rgba(78,205,196,0.5)' : 'rgba(255,255,255,0.1)',
+    background: focusedInput === name ? 'rgba(78,205,196,0.05)' : 'rgba(255,255,255,0.04)',
+    boxShadow: focusedInput === name ? '0 0 0 3px rgba(78,205,196,0.08)' : 'none'
+  });
+
+  const primaryBtnStyle = {
+    padding: '0.9rem 2rem', border: 'none', borderRadius: '12px',
     background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)', color: '#fff',
-    fontSize: '1rem', fontWeight: '700', fontFamily: 'inherit', cursor: 'pointer',
-    transition: 'transform 0.2s, box-shadow 0.2s', letterSpacing: '0.01em'
+    fontSize: '1rem', fontWeight: '700', fontFamily: "'Outfit', sans-serif", cursor: 'pointer',
+    transition: 'all 0.25s ease', letterSpacing: '0.01em',
+    boxShadow: hoveredBtn === 'primary' ? '0 10px 30px rgba(78,205,196,0.35)' : '0 4px 15px rgba(78,205,196,0.15)',
+    transform: hoveredBtn === 'primary' ? 'translateY(-2px)' : 'translateY(0)'
+  };
+
+  const secondaryBtnStyle = {
+    padding: '0.9rem 1.5rem', border: '1.5px solid rgba(255,255,255,0.15)',
+    borderRadius: '12px', background: 'rgba(255,255,255,0.04)', color: '#fff',
+    fontSize: '0.95rem', fontWeight: '600', fontFamily: "'Outfit', sans-serif", cursor: 'pointer',
+    transition: 'all 0.25s ease',
+    borderColor: hoveredBtn === 'notify' ? 'rgba(78,205,196,0.3)' : 'rgba(255,255,255,0.15)',
+    background: hoveredBtn === 'notify' ? 'rgba(78,205,196,0.06)' : 'rgba(255,255,255,0.04)'
   };
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      <style dangerouslySetInnerHTML={{ __html: wallKeyframes }} />
+    <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden', fontFamily: "'Outfit', sans-serif", color: '#fff' }}>
+      <style dangerouslySetInnerHTML={{ __html: keyframes }} />
 
-      {/* Background glow */}
+      {/* Background */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 0,
-        background: `radial-gradient(ellipse 60% 50% at 50% 0%, rgba(78,205,196,0.08) 0%, transparent 70%),
-          radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,107,107,0.04) 0%, transparent 60%),
-          radial-gradient(ellipse 40% 40% at 80% 70%, rgba(254,202,87,0.04) 0%, transparent 60%),
-          linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)`
+        background: `radial-gradient(ellipse 60% 50% at 50% 0%, rgba(78,205,196,0.05) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 40% at 20% 80%, rgba(255,107,107,0.03) 0%, transparent 60%),
+          radial-gradient(ellipse 40% 40% at 80% 70%, rgba(254,202,87,0.03) 0%, transparent 60%),
+          #000000`
       }} />
 
       {/* Particles */}
       <div ref={particlesRef} style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }} />
 
-      {/* Main content */}
+      {/* Top-left brand name */}
+      <div style={{
+        position: 'fixed', top: '1.25rem', left: '1.5rem', zIndex: 10,
+        animation: 'fadeInUp 0.5s ease-out'
+      }}>
+        <span style={{
+          fontSize: '1.1rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+          background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #4ecdc4 100%)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
+        }}>Pilot Light</span>
+      </div>
+
+      {/* Content */}
       <div style={{
         position: 'relative', zIndex: 1, minHeight: '100vh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        padding: '2rem 1.5rem'
+        padding: '2.5rem 1.5rem'
       }}>
-        <div style={{ width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
 
-          {/* Brand */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: '72px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              <div style={{
-                position: 'absolute', inset: '-12px', borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(254,202,87,0.15) 0%, transparent 70%)',
-                animation: 'wallPulseGlow 3s ease-in-out infinite'
-              }} />
-              <svg width="56" height="56" viewBox="0 0 24 24" style={{ position: 'relative', zIndex: 1 }}>
-                <defs>
-                  <linearGradient id="wallFlameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="0%" stopColor="#ff6b6b">
-                      <animate attributeName="stop-color" values="#ff6b6b;#ff8a80;#ff6b6b" dur="1.5s" repeatCount="indefinite"/>
-                    </stop>
-                    <stop offset="50%" stopColor="#feca57">
-                      <animate attributeName="stop-color" values="#feca57;#ffe082;#feca57" dur="1.2s" repeatCount="indefinite"/>
-                    </stop>
-                    <stop offset="100%" stopColor="#fff5cc">
-                      <animate attributeName="stop-color" values="#fff5cc;#ffffff;#fff5cc" dur="0.8s" repeatCount="indefinite"/>
-                    </stop>
-                  </linearGradient>
-                  <filter id="wallGlow">
-                    <feGaussianBlur stdDeviation="0.5" result="blur"/>
-                    <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3 0" result="glow"/>
-                    <feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge>
-                  </filter>
-                </defs>
-                <path fill="url(#wallFlameGrad)" stroke="none" filter="url(#wallGlow)"
-                  d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-              </svg>
-            </div>
+        {/* Centered flame icon */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem', animation: 'fadeInUp 0.6s ease-out' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <div style={{
-              fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'
-            }}>Pilot Light</div>
+              position: 'absolute', inset: '-14px', borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(254,202,87,0.15) 0%, transparent 70%)',
+              animation: 'wallPulseGlow 3s ease-in-out infinite'
+            }} />
+            <svg width="56" height="56" viewBox="0 0 24 24" style={{ position: 'relative', zIndex: 1 }}>
+              <defs>
+                <linearGradient id="wallFlameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                  <stop offset="0%" stopColor="#ff6b6b"><animate attributeName="stop-color" values="#ff6b6b;#ff8a80;#ff6b6b" dur="1.5s" repeatCount="indefinite"/></stop>
+                  <stop offset="50%" stopColor="#feca57"><animate attributeName="stop-color" values="#feca57;#ffe082;#feca57" dur="1.2s" repeatCount="indefinite"/></stop>
+                  <stop offset="100%" stopColor="#fff5cc"><animate attributeName="stop-color" values="#fff5cc;#ffffff;#fff5cc" dur="0.8s" repeatCount="indefinite"/></stop>
+                </linearGradient>
+                <filter id="wallGlow"><feGaussianBlur stdDeviation="0.5" result="blur"/><feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 3 0" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <path fill="none" stroke="url(#wallFlameGrad)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" filter="url(#wallGlow)"
+                d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
           </div>
+        </div>
 
-          {/* Tagline */}
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: '1.05rem', lineHeight: 1.6, fontWeight: 400, maxWidth: '340px' }}>
-            Where audiences shape<br/>the <span style={{ color: '#4ecdc4', fontWeight: 500 }}>next big hit</span>.
-          </p>
-
-          {/* Auth Card */}
+        {/* Main card — Member Credentials */}
+        {mode === 'main' && (
           <div style={{
-            width: '100%', background: 'linear-gradient(135deg, rgba(26,26,46,0.9) 0%, rgba(22,33,62,0.9) 100%)',
-            border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '2rem 1.75rem',
-            backdropFilter: 'blur(20px)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            width: '100%', maxWidth: '440px',
+            animation: 'fadeInUp 0.6s ease-out 0.1s both'
           }}>
-
-            {/* Signup View */}
-            {mode === 'signup' && (
-              <div>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.35rem' }}>Join the community</div>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)' }}>Be among the first to shape what gets made</div>
-                </div>
-                <form
-                  action="https://e8366561.sibforms.com/serve/MUIFAFMJ0latbMfAtv7r0K4Iz7o59SgHw_808trgump0LChSGl-YwcFtwvMwAl7ppoBf0ZjLiBlc1VMN9Dw994vQwldv44_7MUjhRMTGQ42MfMx7ut93n54ic18x3lwXqzgS5VwIFUFbW1v-w41Mey-FeKEbN_RpIK4TRv-Pewgp48DSjvj3GTnlefz73pqC2vqjcbY8GoR0IfbZ2g=="
-                  method="POST"
-                  target="brevo-frame"
-                  onSubmit={handleSignup}
-                >
-                  <div style={{ marginBottom: '1rem' }}>
-                    <input type="text" name="FIRSTNAME" placeholder="First name" required style={inputStyle} />
-                  </div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <input type="email" name="EMAIL" placeholder="Email address" required style={inputStyle} />
-                  </div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <select name="ROLE" required style={{
-                      ...inputStyle, appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer',
-                      backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-                      backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center'
-                    }}>
-                      <option value="" disabled selected style={{ background: '#1a1a2e' }}>Tell us about yourself</option>
-                      <option value="industry" style={{ background: '#1a1a2e' }}>I am an industry professional</option>
-                      <option value="creator" style={{ background: '#1a1a2e' }}>I am a content creator</option>
-                      <option value="fan" style={{ background: '#1a1a2e' }}>I am a fan / regular viewer</option>
-                      <option value="curious" style={{ background: '#1a1a2e' }}>I am just curious</option>
-                    </select>
-                  </div>
-                  <button type="submit" style={btnStyle}
-                    onMouseOver={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 8px 25px rgba(78,205,196,0.3)'; }}
-                    onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}
-                  >Get early access</button>
-                </form>
-                <iframe name="brevo-frame" ref={iframeRef} style={{ display: 'none' }} aria-hidden="true" />
-                <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Already have an account? </span>
-                  <button onClick={() => { setMode('login'); setLoginError(''); }} style={{
-                    background: 'none', border: 'none', color: '#4ecdc4', fontSize: '0.9rem',
-                    fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, marginLeft: '0.3rem'
-                  }}>Sign in</button>
-                </div>
+            <div style={{
+              background: 'linear-gradient(145deg, rgba(18,18,18,0.92) 0%, rgba(12,12,12,0.92) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)', borderRadius: '24px',
+              padding: '2.25rem 2rem',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 400, marginBottom: '0.3rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Credentials</div>
               </div>
-            )}
 
-            {/* Login View */}
-            {mode === 'login' && (
-              <div>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.35rem' }}>Welcome back</div>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)' }}>Sign in to see what's new</div>
-                </div>
-                <form onSubmit={handleLogin}>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <input type="text" placeholder="Username or email" required value={loginId}
-                      onChange={(e) => setLoginId(e.target.value)} style={inputStyle} />
+              {/* Step 1: Username/email */}
+              {loginStep === 1 && (
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (loginId.trim() && loginId.includes('@')) {
+                    setLoginStep(2);
+                    setLoginError('');
+                  }
+                }}>
+                  <div style={{ marginBottom: '0.85rem' }}>
+                    <input
+                      type="text" placeholder="Username or email" required autoFocus
+                      value={loginId} onChange={(e) => setLoginId(e.target.value)}
+                      style={getInputStyle('loginId')}
+                      onFocus={() => setFocusedInput('loginId')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
                   </div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <input type="password" placeholder="Password" required value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)} style={inputStyle} />
-                  </div>
-                  {loginError && (
-                    <div style={{ color: '#ff6b6b', fontSize: '0.85rem', marginBottom: '1rem', textAlign: 'center' }}>{loginError}</div>
+
+                  {loginId.trim() && loginId.includes('@') && (
+                    <button type="submit"
+                      style={{
+                        background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '10px', padding: '0.7rem 2rem', width: '100%',
+                        color: hoveredBtn === 'continue' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                        fontSize: '0.85rem', fontWeight: 500, fontFamily: "'Outfit', sans-serif",
+                        cursor: 'pointer', transition: 'all 0.25s ease', letterSpacing: '0.03em',
+                        borderColor: hoveredBtn === 'continue' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                        animation: 'fadeInUp 0.3s ease-out', marginBottom: '0.85rem'
+                      }}
+                      onMouseEnter={() => setHoveredBtn('continue')}
+                      onMouseLeave={() => setHoveredBtn(null)}
+                    >Continue</button>
                   )}
-                  <button type="submit" disabled={loginLoading} style={{
-                    ...btnStyle, opacity: loginLoading ? 0.6 : 1, cursor: loginLoading ? 'not-allowed' : 'pointer'
-                  }}
-                    onMouseOver={(e) => { if (!loginLoading) { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 8px 25px rgba(78,205,196,0.3)'; } }}
-                    onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}
+
+                  {/* Enter Code link */}
+                  <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
+                    <button
+                      onClick={() => setMode('invite')}
+                      style={{
+                        background: 'none', border: 'none', padding: 0,
+                        color: hoveredBtn === 'enterCode' ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.28)',
+                        fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
+                        fontFamily: "'Outfit', sans-serif", transition: 'color 0.2s',
+                        letterSpacing: '0.02em'
+                      }}
+                      onMouseEnter={() => setHoveredBtn('enterCode')}
+                      onMouseLeave={() => setHoveredBtn(null)}
+                    >Enter Code</button>
+                  </div>
+                </form>
+              )}
+
+              {/* Step 2: Password */}
+              {loginStep === 2 && (
+                <form onSubmit={handleLogin}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    marginBottom: '0.85rem', padding: '0.6rem 0.85rem',
+                    borderRadius: '10px', background: 'rgba(255,255,255,0.04)'
+                  }}>
+                    <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.88rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loginId}</span>
+                    <button type="button"
+                      onClick={() => { setLoginStep(1); setLoginPassword(''); setLoginError(''); }}
+                      style={{
+                        background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+                        fontSize: '0.78rem', cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                        padding: '0.15rem 0.4rem', transition: 'color 0.2s', flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.6)'}
+                      onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.3)'}
+                    >Change</button>
+                  </div>
+
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <input
+                      type="password" placeholder="Password" required autoFocus
+                      value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)}
+                      style={getInputStyle('loginPass')}
+                      onFocus={() => setFocusedInput('loginPass')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                  </div>
+
+                  {loginError && (
+                    <div style={{
+                      color: '#ff6b6b', fontSize: '0.83rem', marginBottom: '0.85rem',
+                      textAlign: 'center', padding: '0.5rem', borderRadius: '8px',
+                      background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.12)'
+                    }}>{loginError}</div>
+                  )}
+
+                  <button type="submit" disabled={loginLoading}
+                    style={{
+                      background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '10px', padding: '0.7rem 2rem', width: '100%',
+                      color: hoveredBtn === 'signin' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                      fontSize: '0.85rem', fontWeight: 500, fontFamily: "'Outfit', sans-serif",
+                      cursor: loginLoading ? 'not-allowed' : 'pointer', transition: 'all 0.25s ease', letterSpacing: '0.03em',
+                      borderColor: hoveredBtn === 'signin' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                      opacity: loginLoading ? 0.6 : 1
+                    }}
+                    onMouseEnter={() => { if (!loginLoading) setHoveredBtn('signin'); }}
+                    onMouseLeave={() => setHoveredBtn(null)}
                   >{loginLoading ? 'Signing in...' : 'Sign in'}</button>
                 </form>
-                <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
-                  <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>Don't have an account? </span>
-                  <button onClick={() => setMode('signup')} style={{
-                    background: 'none', border: 'none', color: '#4ecdc4', fontSize: '0.9rem',
-                    fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, marginLeft: '0.3rem'
-                  }}>Sign up</button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Success View */}
-            {mode === 'success' && (
-              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-                <div style={{
-                  width: '56px', height: '56px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem'
-                }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>You're on the list</h3>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>We'll be in touch soon with your early access.</p>
-              </div>
-            )}
+            {/* Subtle waitlist link */}
+            <div style={{
+              textAlign: 'center', marginTop: '1.5rem',
+              animation: 'fadeInUp 0.6s ease-out 0.25s both'
+            }}>
+              <button
+                onClick={() => setMode('waitlist')}
+                style={{
+                  background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+                  fontSize: '0.82rem', cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                  padding: 0, transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.55)'}
+                onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.3)'}
+              >Join the waitlist</button>
+            </div>
           </div>
+        )}
 
-          {/* Footer */}
-          <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem', lineHeight: 1.5, maxWidth: '300px' }}>
-            By signing up you agree to hear from us occasionally.<br/>
-            No spam, just signal.
-          </p>
+        {/* Invite code view */}
+        {mode === 'invite' && (
+          <div style={{
+            width: '100%', maxWidth: '440px',
+            animation: 'fadeInUp 0.4s ease-out'
+          }}>
+            <div style={{
+              background: 'linear-gradient(145deg, rgba(18,18,18,0.92) 0%, rgba(12,12,12,0.92) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)', borderRadius: '24px',
+              padding: '2.25rem 2rem',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 400, marginBottom: '0.3rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Enter Invite Code</div>
+              </div>
 
-        </div>
+              <form onSubmit={handleInviteSubmit}>
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <input
+                    type="text"
+                    placeholder="Invite code"
+                    value={inviteCode}
+                    onChange={(e) => { setInviteCode(e.target.value); setInviteError(''); }}
+                    style={getInputStyle('invite')}
+                    onFocus={() => setFocusedInput('invite')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                </div>
+                {inviteError && (
+                  <div style={{
+                    color: '#ff6b6b', fontSize: '0.83rem', marginBottom: '0.75rem',
+                    textAlign: 'center', padding: '0.5rem', borderRadius: '8px',
+                    background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.12)'
+                  }}>{inviteError}</div>
+                )}
+                <button
+                  type="submit" disabled={inviteLoading}
+                  style={{
+                    background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '10px', padding: '0.7rem 2rem', width: '100%',
+                    color: hoveredBtn === 'redeem' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                    fontSize: '0.85rem', fontWeight: 500, fontFamily: "'Outfit', sans-serif",
+                    cursor: inviteLoading ? 'not-allowed' : 'pointer', transition: 'all 0.25s ease', letterSpacing: '0.03em',
+                    borderColor: hoveredBtn === 'redeem' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                    opacity: inviteLoading ? 0.6 : 1
+                  }}
+                  onMouseEnter={() => setHoveredBtn('redeem')}
+                  onMouseLeave={() => setHoveredBtn(null)}
+                >{inviteLoading ? 'Checking...' : 'Redeem'}</button>
+              </form>
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setMode('main')}
+                style={{
+                  background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem',
+                  cursor: 'pointer', fontFamily: "'Outfit', sans-serif", padding: 0, transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.55)'}
+                onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.35)'}
+              >← Back to sign in</button>
+            </div>
+          </div>
+        )}
+
+        {/* Waitlist view */}
+        {mode === 'waitlist' && (
+          <div style={{
+            width: '100%', maxWidth: '440px',
+            animation: 'fadeInUp 0.4s ease-out'
+          }}>
+            <div style={{
+              background: 'linear-gradient(145deg, rgba(18,18,18,0.92) 0%, rgba(12,12,12,0.92) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)', borderRadius: '24px',
+              padding: '2.25rem 2rem',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)'
+            }}>
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 400, marginBottom: '0.3rem', color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Join the Waitlist</div>
+              </div>
+
+              <form
+                action="https://e8366561.sibforms.com/serve/MUIFAFMJ0latbMfAtv7r0K4Iz7o59SgHw_808trgump0LChSGl-YwcFtwvMwAl7ppoBf0ZjLiBlc1VMN9Dw994vQwldv44_7MUjhRMTGQ42MfMx7ut93n54ic18x3lwXqzgS5VwIFUFbW1v-w41Mey-FeKEbN_RpIK4TRv-Pewgp48DSjvj3GTnlefz73pqC2vqjcbY8GoR0IfbZ2g=="
+                method="POST"
+                target="brevo-frame"
+                onSubmit={handleWaitlistSubmit}
+              >
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <input
+                    type="email" name="EMAIL" placeholder="your@email.com" required
+                    value={waitlistEmail}
+                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    style={getInputStyle('waitlist')}
+                    onFocus={() => setFocusedInput('waitlist')}
+                    onBlur={() => setFocusedInput(null)}
+                  />
+                </div>
+                <button type="submit"
+                  style={{
+                    background: 'none', border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '10px', padding: '0.7rem 2rem', width: '100%',
+                    color: hoveredBtn === 'notify' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.45)',
+                    fontSize: '0.85rem', fontWeight: 500, fontFamily: "'Outfit', sans-serif",
+                    cursor: 'pointer', transition: 'all 0.25s ease', letterSpacing: '0.03em',
+                    borderColor: hoveredBtn === 'notify' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)'
+                  }}
+                  onMouseEnter={() => setHoveredBtn('notify')}
+                  onMouseLeave={() => setHoveredBtn(null)}
+                >Notify me</button>
+              </form>
+              <iframe name="brevo-frame" ref={iframeRef} style={{ display: 'none' }} aria-hidden="true" />
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => setMode('main')}
+                style={{
+                  background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem',
+                  cursor: 'pointer', fontFamily: "'Outfit', sans-serif", padding: 0, transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.color = 'rgba(255,255,255,0.55)'}
+                onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.35)'}
+              >← Back to sign in</button>
+            </div>
+          </div>
+        )}
+
+        {/* Waitlist success view */}
+        {mode === 'waitlist-success' && (
+          <div style={{
+            width: '100%', maxWidth: '440px',
+            animation: 'successPop 0.5s ease-out'
+          }}>
+            <div style={{
+              background: 'linear-gradient(145deg, rgba(18,18,18,0.92) 0%, rgba(12,12,12,0.92) 100%)',
+              border: '1px solid rgba(255,255,255,0.07)', borderRadius: '24px',
+              padding: '2.75rem 2rem',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                width: '60px', height: '60px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 1.25rem',
+                boxShadow: '0 8px 25px rgba(78,205,196,0.25)'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>You're on the list!</h3>
+              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0, maxWidth: '280px', marginLeft: 'auto', marginRight: 'auto' }}>
+                We'll send you an invite as soon as your spot opens up.
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
