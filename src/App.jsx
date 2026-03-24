@@ -1,32 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import StorageManager from './services/StorageManager';
-// AnimatedFlameIcon removed — using CSS orb for loading
 
-// Pages
-import LandingPage from './pages/LandingPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import ViewingRoom from './pages/ViewingRoom';
-import SeasonView from './pages/SeasonView';
-import AllPilotsView from './pages/AllPilotsView';
-import VideoPage from './pages/VideoPage';
-import CreatorPortalNew from './pages/CreatorPortal';
+// Original public pages
+import LandingPageWall from './pages/LandingPageWall';
+import BrowsePage from './pages/BrowsePage';
+import GenreLandingPage from './pages/GenreLandingPage';
+import GenreSelectionPage from './pages/GenreSelectionPage';
+import CreatorsLandingPage from './pages/CreatorsLandingPage';
+import CreatorApplyPage from './pages/CreatorApplyPage';
+import CreatorApplicationPendingPage from './pages/CreatorApplicationPendingPage';
+import CreatorPortal from './pages/CreatorPortal';
 import CreatorUploadNew from './pages/CreatorUploadNew';
 import UploadSuccessPage from './pages/UploadSuccessPage';
 import AccountPage from './pages/AccountPage';
+import AboutPage from './pages/AboutPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import PilotAnalytics from './pages/PilotAnalytics';
 
 function PilotLightPlatform() {
   const [currentView, setCurrentView] = useState('landing');
   const [pilots, setPilots] = useState([]);
   const [selectedPilot, setSelectedPilot] = useState(null);
+  const [selectedGenre, setSelectedGenre] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resetToken, setResetToken] = useState(null);
-  const [pilotsRemaining, setPilotsRemaining] = useState(0);
 
   // === PASSWORD RESET TOKEN FROM URL ===
-  // Detect #reset-password?token=xxx on page load (from email link)
-  // This ref ensures init() and history setup respect the reset-password view
   const resetPasswordDetectedRef = useRef(false);
 
   useEffect(() => {
@@ -45,19 +48,9 @@ function PilotLightPlatform() {
     }
   }, []);
 
-
   // Track if we're handling a popstate event (to avoid pushing history)
   const isPopstateRef = useRef(false);
   const previousViewRef = useRef(currentView);
-
-  // Store browse scroll position for "Continue Browsing" functionality
-  const browseScrollRef = useRef(0);
-
-  // Browser history support - navigate with history tracking
-  const navigateTo = (view, options = {}) => {
-    const { replace = false } = options;
-    setCurrentView(view);
-  };
 
   // Push to history whenever currentView changes (except from popstate)
   useEffect(() => {
@@ -67,9 +60,8 @@ function PilotLightPlatform() {
       previousViewRef.current = currentView;
       return;
     }
-    // Only push if view actually changed
     if (previousViewRef.current !== currentView) {
-      const state = { view: currentView, pilotId: selectedPilot?.id };
+      const state = { view: currentView, pilotId: selectedPilot?.id, genre: selectedGenre };
       window.history.pushState(state, '', `#${currentView}`);
       previousViewRef.current = currentView;
     }
@@ -81,14 +73,13 @@ function PilotLightPlatform() {
       isPopstateRef.current = true;
       if (event.state && event.state.view) {
         setCurrentView(event.state.view);
+        if (event.state.genre) setSelectedGenre(event.state.genre);
       } else {
-        // Fallback to landing if no state
         setCurrentView('landing');
       }
     };
     window.addEventListener('popstate', handlePopState);
 
-    // Set initial history state on mount (but don't overwrite reset-password URL)
     if (!window.history.state && !resetPasswordDetectedRef.current) {
       window.history.replaceState({ view: 'landing' }, '', '#landing');
     }
@@ -101,11 +92,12 @@ function PilotLightPlatform() {
     if (!loading && currentView !== 'landing') {
       const navState = {
         view: currentView,
-        pilotId: selectedPilot?.id || null
+        pilotId: selectedPilot?.id || null,
+        genre: selectedGenre || null
       };
       localStorage.setItem('pilotlight_nav', JSON.stringify(navState));
     }
-  }, [currentView, selectedPilot, loading]);
+  }, [currentView, selectedPilot, selectedGenre, loading]);
 
   useEffect(() => {
     const init = async () => {
@@ -129,7 +121,7 @@ function PilotLightPlatform() {
         }
 
         if (cachedVoter) {
-          // Refresh voter data — use getVoters if we have a valid token
+          // Refresh voter data
           let voter = cachedVoter;
           try {
             const allVoters = await StorageManager.getVoters();
@@ -139,7 +131,6 @@ function PilotLightPlatform() {
               StorageManager.setCurrentVoter(voter);
             }
           } catch (e) {
-            // If refresh fails (e.g. expired token), use cached data
             console.warn('Could not refresh voter data:', e.message);
           }
 
@@ -152,29 +143,21 @@ function PilotLightPlatform() {
           if (savedNav) {
             try {
               const navState = JSON.parse(savedNav);
-
-              // Restore selected pilot if needed
-              if (navState.pilotId && navState.view === 'video') {
-                const allPilots = await StorageManager.getPilotsForVoting();
-                const pilot = allPilots.find(p => p.id === navState.pilotId);
-                if (pilot) {
-                  setSelectedPilot(pilot);
-                  setCurrentView(navState.view);
-                } else {
-                  // Pilot not found, go to viewing-room
-                  setCurrentView('viewing-room');
-                }
-              } else if (['viewing-room', 'season', 'all-pilots', 'creator-portal', 'creator-upload', 'upload-success', 'account'].includes(navState.view)) {
+              const validViews = ['browse', 'genre-landing', 'genre-selection', 'creators-landing',
+                'creator-apply', 'creator-application-pending', 'creator-portal', 'creator-upload',
+                'upload-success', 'account', 'about', 'privacy', 'terms', 'pilot-analytics'];
+              if (navState.genre) setSelectedGenre(navState.genre);
+              if (validViews.includes(navState.view)) {
                 setCurrentView(navState.view);
               } else {
-                setCurrentView(navState.view || 'viewing-room');
+                setCurrentView('browse');
               }
             } catch (e) {
               console.error('Error restoring nav state:', e);
-              setCurrentView('viewing-room');
+              setCurrentView('browse');
             }
           } else {
-            setCurrentView('viewing-room');
+            setCurrentView('browse');
           }
         } else {
           // No user logged in - go to landing
@@ -208,7 +191,6 @@ function PilotLightPlatform() {
     // Grant automatic creator access to admin account
     if (user.email === 'admin@pilotlighthq.com' && user.creatorStatus !== 'approved') {
       user.creatorStatus = 'approved';
-      // Update in Airtable as well
       try {
         await StorageManager.approveCreatorApplication(user.id);
       } catch (e) {
@@ -216,18 +198,12 @@ function PilotLightPlatform() {
       }
     }
 
-    // Determine target view BEFORE setting state to avoid race conditions
-    let targetView = 'viewing-room';
-    if (currentView === 'video') {
-      targetView = 'video'; // Stay on video page
-    }
-
-    // Set user AND view together before any async operations
+    // After login, go to browse (the main hub)
     setCurrentUser(user);
-    setCurrentView(targetView);
+    setCurrentView('browse');
     StorageManager.setCurrentVoter(user);
 
-    // Load pilots async (won't affect navigation)
+    // Load pilots async
     try {
       const myPilots = await StorageManager.getMyPilots(user.id);
       setPilots(myPilots || []);
@@ -244,163 +220,183 @@ function PilotLightPlatform() {
       setCurrentUser(null);
       setPilots([]);
       setSelectedPilot(null);
-      setPilotsRemaining(0);
+      setSelectedGenre(null);
       setCurrentView('landing');
     }
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5f0eb' }}>
+      <div style={{ minHeight: '100vh', background: '#1a1a2e',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
             width: 40, height: 40, borderRadius: '50%', margin: '0 auto 1rem',
-            background: 'radial-gradient(circle, #e8c49a 0%, #d4a574 50%, rgba(199,127,63,0.4) 100%)',
+            background: 'radial-gradient(circle, #feca57 0%, #ff6b6b 50%, rgba(255,107,107,0.4) 100%)',
             animation: 'warmGlow 2s ease-in-out infinite',
-            boxShadow: '0 0 40px rgba(232, 196, 154, 0.4)'
+            boxShadow: '0 0 40px rgba(254, 202, 87, 0.4)'
           }} />
-          <p style={{ fontSize: '1.2rem', color: 'rgba(245,240,235,0.8)' }}>Loading...</p>
+          <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.8)' }}>Loading...</p>
         </div>
       </div>
     );
   }
 
   const renderView = () => {
-    // Auth guard: if a route requires auth and user is not logged in, redirect to landing
-    const authRequired = ['viewing-room', 'season', 'all-pilots', 'video', 'creator-portal', 'creator-upload', 'upload-success', 'account'].includes(currentView);
+    // Auth guard: these routes require a logged-in user
+    const authRequired = ['browse', 'genre-landing', 'genre-selection', 'creator-portal',
+      'creator-upload', 'upload-success', 'account', 'pilot-analytics'].includes(currentView);
     if (authRequired && !currentUser) {
-      return <LandingPage
-        onLogin={(user) => handleLogin(user)}
-        onForgotPassword={() => setCurrentView('forgot-password')} />;
+      return <LandingPageWall onLoginSuccess={(user) => handleLogin(user)} />;
     }
 
     switch(currentView) {
       case 'landing':
-        return <LandingPage
-          onLogin={(user) => handleLogin(user)}
-          onForgotPassword={() => setCurrentView('forgot-password')} />;
+        return <LandingPageWall onLoginSuccess={(user) => handleLogin(user)} />;
+
       case 'forgot-password':
         return <ForgotPasswordPage
           onBack={() => setCurrentView('landing')}
           onResetSent={() => setCurrentView('reset-password')} />;
+
       case 'reset-password':
         return <ResetPasswordPage
           token={resetToken}
           onSuccess={() => { setResetToken(null); setCurrentView('landing'); }}
           onBack={() => { setResetToken(null); setCurrentView('landing'); }} />;
-      case 'viewing-room':
-        if (!currentUser) { setCurrentView('landing'); return null; }
-        return <ViewingRoom
+
+      case 'browse':
+        return <BrowsePage
           currentUser={currentUser}
           onLogout={handleLogout}
-          onNavigate={(view) => setCurrentView(view)}
-          onSelectPilot={(pilot) => { setSelectedPilot(pilot); setCurrentView('video'); }} />;
-      case 'season':
-        if (!currentUser) { setCurrentView('landing'); return null; }
-        return <SeasonView
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onBack={() => setCurrentView('viewing-room')}
-          onSelectPilot={(pilot) => { setSelectedPilot(pilot); setCurrentView('video'); }}
+          onSelectPilot={(pilot) => { setSelectedPilot(pilot); }}
+          onLogin={(user) => handleLogin(user)}
           onNavigate={(view) => setCurrentView(view)} />;
-      case 'all-pilots':
-        if (!currentUser) { setCurrentView('landing'); return null; }
-        return <AllPilotsView
+
+      case 'genre-landing':
+        return <GenreLandingPage
+          genre={selectedGenre}
           currentUser={currentUser}
           onLogout={handleLogout}
-          onBack={() => setCurrentView('viewing-room')}
-          onSelectPilot={(pilot) => { setSelectedPilot(pilot); setCurrentView('video'); }}
-          onNavigate={(view) => setCurrentView(view)} />;
-      case 'video':
-        return <VideoPage
-          pilot={selectedPilot}
-          currentUser={currentUser}
-          pilotsRemaining={pilotsRemaining}
-          onContinueBrowsing={() => {
-            if (currentUser) {
-              setCurrentView('viewing-room');
-            } else {
-              setCurrentView('landing');
-            }
-          }}
+          onSelectPilot={(pilot) => { setSelectedPilot(pilot); }}
+          onBack={() => setCurrentView('browse')}
+          onPitchPilot={() => setCurrentView('creators-landing')}
           onLogin={(user) => handleLogin(user)}
           onNavigate={(view) => setCurrentView(view)}
-          onReviewAnother={async () => {
-            if (!currentUser) {
-              setCurrentView('landing');
-              return;
-            }
-            const allPilots = await StorageManager.getPilotsForVoting();
-            const votedIds = await StorageManager.getVoterVotedPilots(currentUser.id);
-            const unvoted = allPilots.filter(p => !votedIds.includes(p.id) && p.id !== selectedPilot?.id);
-            if (unvoted.length > 0) {
-              const randomPilot = unvoted[Math.floor(Math.random() * unvoted.length)];
-              setSelectedPilot(randomPilot);
-              setPilotsRemaining(unvoted.length - 1);
-            } else {
-              setPilotsRemaining(0);
-              // Stay on video page — VideoPage will show "thank you" message
-            }
-          }} />;
+          onSwitchGenre={(genre) => { setSelectedGenre(genre); }} />;
+
+      case 'genre-selection':
+        return <GenreSelectionPage
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onSelectGenre={(genre) => { setSelectedGenre(genre); setCurrentView('genre-landing'); }}
+          onPitchPilot={() => setCurrentView('creators-landing')}
+          onLogin={(user) => handleLogin(user)}
+          onNavigate={(view) => setCurrentView(view)} />;
+
+      case 'creators-landing':
+        return <CreatorsLandingPage
+          currentUser={currentUser}
+          onBack={() => setCurrentView('browse')}
+          onNavigate={(view) => setCurrentView(view)}
+          onApply={() => setCurrentView('creator-apply')}
+          onLogin={(user) => handleLogin(user)} />;
+
+      case 'creator-apply':
+        if (!currentUser) { setCurrentView('landing'); return null; }
+        return <CreatorApplyPage
+          currentUser={currentUser}
+          onBack={() => setCurrentView('creators-landing')}
+          onSubmit={() => setCurrentView('creator-application-pending')}
+          onNavigate={(view) => setCurrentView(view)} />;
+
+      case 'creator-application-pending':
+        return <CreatorApplicationPendingPage
+          onBrowse={() => setCurrentView('browse')}
+          onNavigate={(view) => setCurrentView(view)} />;
+
       case 'creator-portal':
         if (!currentUser) { setCurrentView('landing'); return null; }
-        // Only approved creators can access the portal
         if (currentUser.creatorStatus !== 'approved') {
-          setCurrentView('viewing-room');
+          setCurrentView('browse');
           return null;
         }
-        return <CreatorPortalNew
+        return <CreatorPortal
           currentUser={currentUser}
           pilots={pilots}
-          onHome={() => setCurrentView('viewing-room')}
+          onHome={() => setCurrentView('browse')}
           onUploadNew={() => setCurrentView('creator-upload')}
-          onSelectPilot={(pilot) => { setSelectedPilot(pilot); setCurrentView('video'); }}
+          onSelectPilot={(pilot) => { setSelectedPilot(pilot); }}
           onRefreshPilots={refreshPilots}
           onUserUpdate={(updatedUser) => setCurrentUser(updatedUser)}
           onLogout={handleLogout} />;
+
       case 'creator-upload':
         if (!currentUser) { setCurrentView('landing'); return null; }
-        // Only approved creators can upload
         if (currentUser.creatorStatus !== 'approved') {
-          setCurrentView('viewing-room');
+          setCurrentView('browse');
           return null;
         }
         return <CreatorUploadNew
           currentUser={currentUser}
-          onHome={() => setCurrentView('viewing-room')}
+          onHome={() => setCurrentView('browse')}
           onBack={() => setCurrentView('creator-portal')}
           onSubmit={async () => { await refreshPilots(); setCurrentView('upload-success'); }} />;
+
       case 'upload-success':
         return <UploadSuccessPage
-          onHome={() => setCurrentView('viewing-room')}
+          onHome={() => setCurrentView('browse')}
           onCreatorPortal={() => setCurrentView('creator-portal')} />;
+
       case 'account':
         if (!currentUser) { setCurrentView('landing'); return null; }
         return <AccountPage
           currentUser={currentUser}
-          onBack={() => setCurrentView('viewing-room')}
+          onBack={() => setCurrentView('browse')}
           onNavigate={(view) => setCurrentView(view)}
           onLogout={handleLogout} />;
+
+      case 'about':
+        return <AboutPage
+          currentUser={currentUser}
+          onBack={() => setCurrentView('browse')}
+          onNavigate={(view) => setCurrentView(view)} />;
+
+      case 'privacy':
+        return <PrivacyPage
+          currentUser={currentUser}
+          onBack={() => setCurrentView('browse')}
+          onNavigate={(view) => setCurrentView(view)} />;
+
+      case 'terms':
+        return <TermsPage
+          currentUser={currentUser}
+          onBack={() => setCurrentView('browse')}
+          onNavigate={(view) => setCurrentView(view)} />;
+
+      case 'pilot-analytics':
+        return <PilotAnalytics
+          pilot={selectedPilot}
+          onBack={() => setCurrentView('creator-portal')}
+          onRefresh={refreshPilots} />;
+
       default:
-        // Default routing based on auth state
         if (currentUser) {
-          return <ViewingRoom
+          return <BrowsePage
             currentUser={currentUser}
             onLogout={handleLogout}
-            onNavigate={(view) => setCurrentView(view)}
-            onSelectPilot={(pilot) => { setSelectedPilot(pilot); setCurrentView('video'); }} />;
-        } else {
-          return <LandingPage
+            onSelectPilot={(pilot) => { setSelectedPilot(pilot); }}
             onLogin={(user) => handleLogin(user)}
-            onForgotPassword={() => setCurrentView('forgot-password')} />;
+            onNavigate={(view) => setCurrentView(view)} />;
+        } else {
+          return <LandingPageWall onLoginSuccess={(user) => handleLogin(user)} />;
         }
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a',
-      fontFamily: '"DM Sans", -apple-system, BlinkMacSystemFont, sans-serif', color: '#f5f0eb' }}>
+    <div style={{ minHeight: '100vh', background: '#1a1a2e',
+      fontFamily: '"DM Sans", -apple-system, BlinkMacSystemFont, sans-serif', color: '#fff' }}>
       {renderView()}
     </div>
   );
