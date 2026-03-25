@@ -61,7 +61,7 @@ function InviteOnlyWall({ onInviteAccepted, getInviteType, onLoginSuccess }) {
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden',
-      background: 'linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%)' }}>
+      background: 'linear-gradient(135deg, #0a0a0a 0%, #0d0d0d 50%, #111111 100%)' }}>
 
       <div style={{
         position: 'relative', zIndex: 1, minHeight: '100vh',

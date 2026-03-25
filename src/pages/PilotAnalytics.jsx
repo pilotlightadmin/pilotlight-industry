@@ -592,7 +592,7 @@ function PilotAnalytics({ pilot, onBack, onRefresh }) {
       {editingPilot && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setEditingPilot(null)}>
-          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', border: '1px solid rgba(255,255,255,0.1)' }}
+          <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '90%', border: '1px solid rgba(255,255,255,0.1)' }}
             onClick={(e) => e.stopPropagation()}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem', color: '#feca57' }}>Edit Pilot</h2>
             <div style={{ marginBottom: '1rem' }}>
@@ -634,7 +634,7 @@ function PilotAnalytics({ pilot, onBack, onRefresh }) {
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
           onClick={() => setDeleteConfirm(false)}>
-          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '20px', padding: '2rem', maxWidth: '400px', width: '90%', border: '1px solid rgba(231,76,60,0.3)', textAlign: 'center' }}
+          <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', borderRadius: '20px', padding: '2rem', maxWidth: '400px', width: '90%', border: '1px solid rgba(231,76,60,0.3)', textAlign: 'center' }}
             onClick={(e) => e.stopPropagation()}>
             <Icon component={Trash2} style={{ width: '48px', height: '48px', color: '#e74c3c', marginBottom: '1rem' }} />
             <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#fff' }}>Delete Pilot?</h2>
@@ -659,7 +659,7 @@ function PilotAnalytics({ pilot, onBack, onRefresh }) {
       {showResubmitModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, overflowY: 'auto', padding: '2rem 0' }}
           onClick={() => setShowResubmitModal(false)}>
-          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '20px', padding: '2.5rem', maxWidth: '600px', width: '90%', border: '1px solid rgba(78,205,196,0.3)', margin: 'auto' }}
+          <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', borderRadius: '20px', padding: '2.5rem', maxWidth: '600px', width: '90%', border: '1px solid rgba(78,205,196,0.3)', margin: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <Icon component={Upload} style={{ width: '48px', height: '48px', color: '#4ecdc4', marginBottom: '1rem' }} />

@@ -143,7 +143,7 @@ function LoginModal({ onClose, onLogin, onForgotPassword, message, initialMode =
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex',
       alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '1rem' }} onClick={onClose}>
-      <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: '20px',
+      <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', borderRadius: '20px',
         padding: 'clamp(1.25rem, 4vw, 2rem)', maxWidth: '420px', width: '100%', border: '1px solid rgba(78,205,196,0.3)', position: 'relative' }}
         onClick={(e) => e.stopPropagation()}>
 
@@ -196,11 +196,11 @@ function LoginModal({ onClose, onLogin, onForgotPassword, message, initialMode =
               {/* Gender */}
               <select value={gender} onChange={(e) => setGender(e.target.value)} required
                 style={{ ...inputStyle, cursor: 'pointer', appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'rgba(255,255,255,0.5)\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center' }}>
-                <option value="" style={{ background: '#1a1a2e', color: 'rgba(255,255,255,0.5)' }}>Select Gender *</option>
-                <option value="Male" style={{ background: '#1a1a2e', color: '#fff' }}>Male</option>
-                <option value="Female" style={{ background: '#1a1a2e', color: '#fff' }}>Female</option>
-                <option value="Non-Binary" style={{ background: '#1a1a2e', color: '#fff' }}>Non-Binary</option>
-                <option value="Prefer Not to Say" style={{ background: '#1a1a2e', color: '#fff' }}>Prefer Not to Say</option>
+                <option value="" style={{ background: '#0a0a0a', color: 'rgba(255,255,255,0.5)' }}>Select Gender *</option>
+                <option value="Male" style={{ background: '#0a0a0a', color: '#fff' }}>Male</option>
+                <option value="Female" style={{ background: '#0a0a0a', color: '#fff' }}>Female</option>
+                <option value="Non-Binary" style={{ background: '#0a0a0a', color: '#fff' }}>Non-Binary</option>
+                <option value="Prefer Not to Say" style={{ background: '#0a0a0a', color: '#fff' }}>Prefer Not to Say</option>
               </select>
 
               {/* Location (auto-detected or manual input) */}

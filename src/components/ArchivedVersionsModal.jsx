@@ -44,7 +44,7 @@ function ArchivedVersionsModal({ pilot, onClose, onSelectVersion }) {
   },
     React.createElement('div', {
       style: {
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)',
         borderRadius: '20px', padding: '2rem', maxWidth: '600px', width: '100%',
         maxHeight: '80vh', overflowY: 'auto',
         border: '1px solid rgba(78,205,196,0.3)'
@@ -61,7 +61,7 @@ function ArchivedVersionsModal({ pilot, onClose, onSelectVersion }) {
       ),
       React.createElement('div', { style: { marginBottom: '1.5rem', padding: '1rem', background: 'rgba(78,205,196,0.1)', borderRadius: '12px', border: '1px solid rgba(78,205,196,0.2)' } },
         React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' } },
-          React.createElement('span', { style: { background: '#4ecdc4', color: '#1a1a2e', padding: '0.2rem 0.5rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700' } }, 'CURRENT'),
+          React.createElement('span', { style: { background: '#4ecdc4', color: '#0a0a0a', padding: '0.2rem 0.5rem', borderRadius: '8px', fontSize: '0.7rem', fontWeight: '700' } }, 'CURRENT'),
           React.createElement('span', { style: { color: '#fff', fontWeight: '600' } }, `Version ${pilot.version || 1}`)
         ),
         React.createElement('p', { style: { color: 'rgba(255,255,255,0.8)', margin: 0, fontSize: '0.9rem' } }, pilot.pilotTitle)

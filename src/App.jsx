@@ -25,7 +25,12 @@ function PilotLightPlatform() {
   const [pilots, setPilots] = useState([]);
   const [selectedPilot, setSelectedPilot] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  // DEV BYPASS: auto-login to skip the landing wall during local development
+  const [currentUser, setCurrentUser] = useState(
+    window.location.hostname === 'localhost'
+      ? { id: 'dev-user', email: 'dev@pilotlight.test', displayName: 'Dev User', role: 'voter' }
+      : null
+  );
   const [loading, setLoading] = useState(true);
   const [resetToken, setResetToken] = useState(null);
 
@@ -104,22 +109,21 @@ function PilotLightPlatform() {
       try {
         // === DEV MODE: Skip login when Airtable API is unavailable ===
         // Remove this block when API is back (April 1st)
-        // TEMPORARILY DISABLED to work on landing page
-        // const DEV_BYPASS_LOGIN = import.meta.env.DEV;
-        // if (DEV_BYPASS_LOGIN) {
-        //   const mockUser = {
-        //     id: 'dev-user',
-        //     name: 'Dev Tester',
-        //     email: 'dev@pilotlighthq.com',
-        //     creatorStatus: 'approved',
-        //     displayName: 'Dev Tester'
-        //   };
-        //   setCurrentUser(mockUser);
-        //   setPilots([]);
-        //   setCurrentView('browse');
-        //   setLoading(false);
-        //   return;
-        // }
+        const DEV_BYPASS_LOGIN = import.meta.env.DEV;
+        if (DEV_BYPASS_LOGIN) {
+          const mockUser = {
+            id: 'dev-user',
+            name: 'Dev Tester',
+            email: 'dev@pilotlighthq.com',
+            creatorStatus: 'approved',
+            displayName: 'Dev Tester'
+          };
+          setCurrentUser(mockUser);
+          setPilots([]);
+          setCurrentView('browse');
+          setLoading(false);
+          return;
+        }
         // === END DEV MODE ===
 
         // If reset-password was detected from URL, skip normal init routing
@@ -247,7 +251,7 @@ function PilotLightPlatform() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#1a1a2e',
+      <div style={{ minHeight: '100vh', background: '#0a0a0a',
         display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -415,7 +419,7 @@ function PilotLightPlatform() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#1a1a2e',
+    <div style={{ minHeight: '100vh', background: '#0a0a0a',
       fontFamily: '"DM Sans", -apple-system, BlinkMacSystemFont, sans-serif', color: '#fff' }}>
       {renderView()}
     </div>

@@ -105,7 +105,7 @@ function AccountPage({ currentUser, onBack, onNavigate, onLogout }) {
           <div onClick={() => setMobileMenuOpen(false)}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999 }}>
             <div onClick={(e) => e.stopPropagation()}
-              style={{ position: 'absolute', top: '56px', right: 0, left: 0, background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              style={{ position: 'absolute', top: '56px', right: 0, left: 0, background: 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
               <button onClick={() => { onNavigate('browse'); setMobileMenuOpen(false); }}
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', padding: '0.6rem 0.5rem', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -317,7 +317,7 @@ function AccountPage({ currentUser, onBack, onNavigate, onLogout }) {
       {/* Delete Account Confirmation Modal */}
       {showDeleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-          <div style={{ background: '#1a1a2e', borderRadius: '16px', padding: '2rem', maxWidth: '450px', width: '100%', border: '1px solid rgba(255,107,107,0.3)' }}>
+          <div style={{ background: '#0a0a0a', borderRadius: '16px', padding: '2rem', maxWidth: '450px', width: '100%', border: '1px solid rgba(255,107,107,0.3)' }}>
             <h3 style={{ color: '#ff6b6b', marginBottom: '1rem', fontSize: '1.25rem' }}>Delete Account?</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
               This action is <strong style={{ color: '#ff6b6b' }}>permanent and irreversible</strong>. All your data, voting history, and any uploaded pilots will be permanently deleted.

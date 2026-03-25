@@ -132,7 +132,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
           onClick={() => setShowProfileModal(false)}>
           <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(212,165,116,0.15)', borderRadius: '16px', padding: '2rem', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflow: 'auto' }}
             onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: '1.5rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '1.5rem', color: '#f5f0eb', fontStyle: 'italic' }}>Edit Profile</h2>
+            <h2 style={{ fontSize: '1.5rem', fontFamily: '"Cormorant Garamond", Georgia, serif', fontWeight: 300, letterSpacing: '0.15em', marginBottom: '1.5rem', color: '#f5f0eb' }}>Edit Profile</h2>
 
             {profileError && <div style={{ padding: '1rem', background: 'rgba(255,99,72,0.15)', borderRadius: '10px', color: '#ff7675', marginBottom: '1rem', fontSize: '0.85rem' }}>{profileError}</div>}
             {profileSuccess && <div style={{ padding: '1rem', background: 'rgba(0,184,148,0.15)', borderRadius: '10px', color: '#00b894', marginBottom: '1rem', fontSize: '0.85rem' }}>Profile updated successfully!</div>}
@@ -164,15 +164,20 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span onClick={onHome} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'rgba(245,240,235,0.3)', transition: 'color 0.2s', marginRight: '0.25rem' }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'rgba(245,240,235,0.7)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'rgba(245,240,235,0.3)'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          </span>
           <FlameIcon size={32} style={{ color: '#d4a574' }} />
-          <h1 style={{ fontSize: '2.5rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', margin: 0, color: '#f5f0eb', fontStyle: 'italic' }}>Creator Portal</h1>
+          <h1 style={{ fontSize: '2.5rem', fontFamily: '"Cormorant Garamond", Georgia, serif', fontWeight: 300, letterSpacing: '0.15em', margin: 0, color: '#f5f0eb' }}>Creator Portal</h1>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={() => setShowProfileModal(true)} style={{ padding: '0.75rem 1.5rem', background: 'rgba(212,165,116,0.1)', border: '1px solid rgba(212,165,116,0.3)', borderRadius: '6px', color: '#d4a574', fontWeight: 400, cursor: 'pointer', fontFamily: 'DM Sans', fontSize: '0.9rem' }}>
             Edit Profile
           </button>
           <button onClick={onHome} style={{ padding: '0.75rem 1.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(212,165,116,0.15)', borderRadius: '6px', color: '#f5f0eb', cursor: 'pointer', fontFamily: 'DM Sans', fontSize: '0.9rem' }}>
-            Back to Viewing Room
+            Back to Browse
           </button>
         </div>
       </div>
@@ -183,8 +188,8 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
           onClick={() => setActiveTab('pilots')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: '"Playfair Display", serif', fontSize: '1rem', fontWeight: 400,
-            letterSpacing: '0.04em', fontStyle: 'italic',
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.95rem', fontWeight: 500,
+            letterSpacing: '0.02em',
             color: activeTab === 'pilots' ? '#f5f0eb' : 'rgba(245,240,235,0.4)',
             paddingBottom: '1rem', position: 'relative',
             borderBottom: activeTab === 'pilots' ? '2px solid #d4a574' : '2px solid transparent',
@@ -197,8 +202,8 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
           onClick={() => setActiveTab('inbox')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: '"Playfair Display", serif', fontSize: '1rem', fontWeight: 400,
-            letterSpacing: '0.04em', fontStyle: 'italic',
+            fontFamily: '"DM Sans", sans-serif', fontSize: '0.95rem', fontWeight: 500,
+            letterSpacing: '0.02em',
             color: activeTab === 'inbox' ? '#f5f0eb' : 'rgba(245,240,235,0.4)',
             paddingBottom: '1rem', position: 'relative',
             borderBottom: activeTab === 'inbox' ? '2px solid #d4a574' : '2px solid transparent',
@@ -235,8 +240,8 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
               {Object.entries(messagesByPilot).map(([pilotTitle, msgs]) => (
                 <div key={pilotTitle} style={{ marginBottom: '2rem' }}>
                   <h3 style={{
-                    fontFamily: '"Playfair Display", serif', fontSize: '1.1rem', fontWeight: 400,
-                    letterSpacing: '0.04em', fontStyle: 'italic', color: '#d4a574',
+                    fontFamily: '"Cormorant Garamond", Georgia, serif', fontSize: '1.1rem', fontWeight: 300,
+                    letterSpacing: '0.1em', color: '#d4a574',
                     margin: '0 0 1rem 0', paddingBottom: '0.5rem',
                     borderBottom: '1px solid rgba(212,165,116,0.15)'
                   }}>{pilotTitle}</h3>
@@ -315,7 +320,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
       ) : (
         <>
           {/* My Pilots Section */}
-          <h2 style={{ fontSize: '1.8rem', fontFamily: '"Playfair Display", serif', fontWeight: 400, letterSpacing: '0.06em', marginBottom: '2rem', color: '#f5f0eb', fontStyle: 'italic' }}>My Pilots</h2>
+          <h2 style={{ fontSize: '1.8rem', fontFamily: '"Cormorant Garamond", Georgia, serif', fontWeight: 300, letterSpacing: '0.15em', marginBottom: '2rem', color: '#f5f0eb' }}>My Pilots</h2>
 
           {/* Pilots Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
@@ -331,7 +336,7 @@ function CreatorPortal({ currentUser, pilots, onHome, onUploadNew, onSelectPilot
                   onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(212,165,116,0.15)'; }}>
 
                   {/* Thumbnail */}
-                  <div style={{ position: 'relative', paddingBottom: '56.25%', background: pilot.playbackId ? `url(https://image.mux.com/${pilot.playbackId}/thumbnail.png) center/cover` : 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', cursor: 'pointer' }}
+                  <div style={{ position: 'relative', paddingBottom: '56.25%', background: pilot.playbackId ? `url(https://image.mux.com/${pilot.playbackId}/thumbnail.png) center/cover` : 'linear-gradient(135deg, #0a0a0a 0%, #111111 100%)', cursor: 'pointer' }}
                     onClick={() => onSelectPilot(pilot)}>
                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', transition: 'all 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
